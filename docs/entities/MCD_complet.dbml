@@ -76,16 +76,16 @@ Table blocked_queue_elemnt {
 
 // blocked queue function should check every 1ms ressources
 Table blocked_queue {
-  elemnts list // blocked_queue simple list not structure, dbml dont support list 
+  elemnts list [ref : > blocked_queue_elemnt.variable_adress] // blocked_queue simple list not structure, dbml dont support list 
 }
 
-Table in_execution_queue {
+// this struct is passed to the function
+Table in_execution_queue_elemnt {
   pid int
   start time 
   end time
   cpu_time_used float // en ms: end - start
 }
-
 
 enum algorithms {
   "rr" // round robin
@@ -94,7 +94,8 @@ enum algorithms {
   "fcfs" // first come first served
   "sjf" // short jo first
 }
-//
+
+// sh
 Table ordonnanceur { // which is schedular
   aligorithm algorithms // specified by user
   ready_queue ready_queue
