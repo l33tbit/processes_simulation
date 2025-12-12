@@ -48,17 +48,57 @@ Table process_table {
 
 
 Table ready_queue_element {
+  variable_adress hex // only in mcd not code
   pid int // process id
   next pointer // pointeur vers next element (depens on schedular algorithm)
   previous pointer // pointeur vers l element precedent (depens also on the schedular alogorithm)
 }
 // ready_queue shouln't modify the process_list but clone the process table elements after sorting or depens on the schedular
 Table ready_queue {
-  head pointeur // pointe vers ready_queue_element created by ready_queue function
-  tail pointeur // pointe vers ready_queue_element
+  head pointeur [ref : > ready_queue_element.variable_adress ] // pointe vers ready_queue_element created by ready_queue function
+  tail pointeur [ref: > ready_queue_element.variable_adress] // pointe vers ready_queue_element
   size int // n ready_queue_elements
 }
 
+enum resources { // enum in dbml because mkatsupportech creation d LIST but list in code
+  "a"
+  "b"
+  "c"
+  "d"
+  "e"
+}
+
+Table blocked_queue_elemnt {
+  variable_adress hex // only here in mcd not code
+  pid int
+  event resources // one of the ressources mentionned
+}
+
+// blocked queue function should check every 1ms ressources
+Table blocked_queue {
+  elemnts list // blocked_queue simple list not structure, dbml dont support list 
+}
+
+Table in_execution_queue {
+  pid int
+  start time 
+  end time
+  cpu_time_used float // en ms: end - start
+}
+
+
+enum algorithms {
+  "rr" // round robin
+  "srtf" // short remaining time first
+  "ppp" // par priorite preemetive
+  "fcfs" // first come first served
+  "sjf" // short jo first
+}
+//
+Table ordonnanceur { // which is schedular
+  aligorithm algorithms // specified by user
+  ready_queue ready_queue
+}
 
 
 
