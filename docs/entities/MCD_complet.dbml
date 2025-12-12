@@ -55,7 +55,8 @@ Table ready_queue_element {
 // ready_queue shouln't modify the process_list but clone the process table elements after sorting or depens on the schedular
 Table ready_queue {
   head pointeur // pointe vers ready_queue_element created by ready_queue function
-  tail pointeur // pointe
+  tail pointeur // pointe vers ready_queue_element
+  size int // n ready_queue_elements
 }
 
 
