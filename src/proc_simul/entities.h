@@ -1,6 +1,16 @@
 
 #include <time.h>
 
+
+
+
+// decalaration des types de fonctions
+
+
+
+
+
+
 enum {
     READY, BLOCKED, EXECUTION, TERMINATED
 } E_etat;
@@ -21,6 +31,7 @@ typedef struct {
 
 typedef struct {
     int pcb_id;
+    int pid;
     char process_name[20];
     char user_id[20];
     int ppid;
@@ -71,9 +82,9 @@ typedef struct {
 } BLOCKED_QUEUE_ELEMENT;
 
 typedef struct { // circular chaine
-    BLOCKED_QUEUE_ELEMENT* head; 
-    BLOCKED_QUEUE_ELEMENT* tail;
-    int size;
+    BLOCKED_QUEUE_ELEMENT* head; // first elme
+    BLOCKED_QUEUE_ELEMENT* tail; // last one
+    int size; // how many elements
 } BLOCKED_QUEUE;
 
 enum {
@@ -88,67 +99,30 @@ typedef struct {
     struct tm start;
     struct tm end;
     int cpu_time_used; // en ms: end - start
-    
 } ORDONNANCEUR;
 
 typedef struct {
     RESSOURCES_ELEMENT* ressources; // again using malloc to allocate N ressources
-    int ressource_count; // n processus
+    int ressource_count; // n ressources
 } RESSOURCE_MANAGER;
 
 typedef struct {
-    PROCESS_TABLE* process_table;
-    int process_count;
-    READY_QUEUE* ready_queue;
-    BLOCKED_QUEUE* blocked_queue; 
+    PROCESS_TABLE* process_table; // pointeur vers process table
+    int process_count; // n processes
+    READY_QUEUE* ready_queue; // pointer to ready chaine
+    BLOCKED_QUEUE* blocked_queue; // pointer to blocked
 } PROCESS_MANAGER;
 
+typedef struct {
+    ORDONNANCEUR* schedular; // pointeur vers lordonnanceur
+    PROCESS_MANAGER* process_manager; // pointeur to process manaer
+    RESSOURCE_MANAGER* ressource_manager; // pointeur vers ressource
+    int simulation_time;
+    bool runing;
+} SIMULATOR;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*
-// scheduling.h
-#ifndef SCHEDULING_H
-#define SCHEDULING_H
-
-#include "process.h"
-
-// Déclaration des types de fonctions
-typedef Process* (*SelectNextFunc)(void* context);
-typedef void (*OnArrivalFunc)(void* context, Process* p);
-typedef void (*OnCompletionFunc)(void* context, Process* p);
-typedef void (*OnQuantumExpiryFunc)(void* context);
-typedef void (*OnIOCompletionFunc)(void* context, Process* p);
-
-typedef struct SchedulingAlgorithm {
-    char name[20];
-    
-    // Pointeurs de fonction
-    SelectNextFunc select_next;
-    OnArrivalFunc on_process_arrival;
-    OnCompletionFunc on_process_completion;
-    OnQuantumExpiryFunc on_quantum_expiry;
-    OnIOCompletionFunc on_io_completion;
-    
-    void* algorithm_data;
-    
-} SchedulingAlgorithm;
-
-// Fonctions de création
-SchedulingAlgorithm* create_fcfs_algorithm();
-SchedulingAlgorithm* create_rr_algorithm(int quantum);
-SchedulingAlgorithm* create_sjf_algorithm();
-
-#endif
-*/
+// structures nedded par les fonctions
+typedef struct { // used by process manager: many iteraction over process list but obe contact with ready queue for time reducing
+    PCB* first_element;
+    int size;
+} pcb_list; // stand for pcb first came
