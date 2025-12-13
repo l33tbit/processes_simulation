@@ -12,7 +12,7 @@ Table PCB {
   */
   instruction list(resources_element) // instruction that dont need ressource should be market as by example "pass"
   compteur_programe int // total instruction counte
-  memoire_necessaire float // memoire necessaire en mbit
+  memoire_necessaire int // memoire necessaire en mbit
   
   burst_time float // (burst) temps necessaire pour l exec ; burst = compte_temps + temps_restant
   cpu_time_used float // temps cpu consomme en ms "initialise a 0 increasing bu schedular"
@@ -48,7 +48,7 @@ enum etat_enum {
 // store all the structures in a list store pointer to a variable ex: proc_table
 Table process_table {
   pid int // l id affecté au pcb
-  pic_id int [ref : > PCB.pcb_id] // l'id definie en pcb 
+  pcb_id int [ref : > PCB.pcb_id] // l'id definie en pcb 
 }
 
 
@@ -97,14 +97,61 @@ enum algorithms {
 // sh
 Table ordonnanceur { // which is schedular
   aligorithm algorithms // specified by user
-  ready_queue ready_queue [ref : > ready_queue.head]
+
   in_exec_proc_pcb PCB // pcb du process en cours d execution
-  blocked_queue blocked_queue // [ref : > blocked_queue]
 
   quantum float // for rr
   start time 
   end time
   cpu_time_used float // en ms: end - start
 
-  ressources ressources_list [ref : > ressources_list.element]
 }
+
+Table ressource_manager {
+  ressources ressources_list [ref : > ressources_list.element]
+  ressource_count int
+} 
+
+Table process_manager {
+  process_table pointeur // pointe vers process table
+  process_count int // nombre des process
+  ready_queue ready_queue [ref : > ready_queue.head]
+  blocked_queue blocked_queue // [ref : > blocked_queue]
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

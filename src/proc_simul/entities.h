@@ -54,7 +54,7 @@ typedef struct {
     READY_QUEUE_ELEMENT* previous; // pointeur vers element precedent
 } READY_QUEUE_ELEMENT;
 
-typedef struct {
+typedef struct { // ordred chaine
     READY_QUEUE_ELEMENT* head; // pointeur vers premier element du chaine
     READY_QUEUE_ELEMENT* tail; // pointeur vers last element
     int size; // nombre du nodes
@@ -70,17 +70,26 @@ typedef struct {
     RESSOURCES_ELEMENT* ressource; // ressource needed to execute the instruction
 } BLOCKED_QUEUE_ELEMENT;
 
+typedef struct { // circular chaine
+    BLOCKED_QUEUE_ELEMENT* head; 
+    BLOCKED_QUEUE_ELEMENT* tail;
+    int size;
+} BLOCKED_QUEUE;
+
 enum {
     RR, SRTF, PPP, FCFS, SJF
 } Algorithms;
 
 typedef struct {
     Algorithms algorithm;
-    READY_QUEUE ready_queue;
-    BLOCKED_QUEUE_ELEMENT* blocked_queue; // using malloc later to allocate the size of given N processus
+    READY_QUEUE* ready_queue;
+    BLOCKED_QUEUE* blocked_queue; 
     PCB* exec_proc; // processus en train de s'executer
     
-    
+    int quantum; // quantum de time pour RR
+    struct tm start;
+    struct tm end;
+    int cpu_time_used; // en ms: end - start
     
     RESSOURCES_ELEMENT* ressources; // again using malloc to allocate N ressources
 } ORDONNANCEUR;
