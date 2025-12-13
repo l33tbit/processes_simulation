@@ -56,5 +56,26 @@ typedef struct {
 
 typedef struct {
     READY_QUEUE_ELEMENT* head; // pointeur vers premier element du chaine
-
+    READY_QUEUE_ELEMENT* tail; // pointeur vers last element
+    int size; // nombre du nodes
 } READY_QUEUE;
+
+typedef struct {
+    char ressource_name[10];
+    bool disponibilite;
+} RESSOURCES_ELEMENT;
+
+typedef struct {
+    int pid; // l id processus
+    RESSOURCES_ELEMENT* ressource; // ressource needed to execute the instruction
+} BLOCKED_QUEUE_ELEMENT;
+
+enum {
+    RR, SRTF, PPP, FCFS, SJF
+} Algorithms;
+
+typedef struct {
+    Algorithms algorithm;
+    READY_QUEUE ready_queue
+
+} ORDONNANCEUR;
