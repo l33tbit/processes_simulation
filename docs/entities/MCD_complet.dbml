@@ -30,7 +30,6 @@ Table process_statistics {
   var_name hex // only here not code
   temps_arrive time // quand il etait ajouté au process_table
   temps_creation time // quand la structure etait creer
-  temps_execution time // time total needed en ms -> burst time
   temps_fin time // when marked terminated
 
   temps_attente float // gap between temps arrive et temps exec
