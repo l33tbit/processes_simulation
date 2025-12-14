@@ -46,4 +46,13 @@ typedef struct {
     EXECUTION_QUEUE* in_execution_queue; // pointeur vers queue d'execution
 
     ORDONNANCEUR_STATISTICS* statistics; // pointeur vers les statistics du schedular
+
+
+
+
+
+
+
+
+
 } ORDONNANCEUR;

@@ -50,6 +50,7 @@ typedef struct {
     int process_count; // n processes
     READY_QUEUE* ready_queue; // pointer to ready chaine
     BLOCKED_QUEUE* blocked_queue; // pointer to blocked
+    FILE* processus_buffer;
     // RESSOURCE* ressources; // in the retrieving should retrieve ressources needed also if a ressource doesn't match the enumeration throw an error (ressource anavailable)
 
     // functions
