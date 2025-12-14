@@ -104,7 +104,7 @@ typedef struct { // ordred chaine
 
 typedef struct {
     int pid; // l id processus
-    RESSOURCES_ELEMENT* ressource; // ressource needed to execute the instruction
+    RESSOURCE_ELEMENT* ressource; // ressource needed to execute the instruction
 } BLOCKED_QUEUE_ELEMENT;
 
 typedef struct { // circular chaine
@@ -182,25 +182,4 @@ typedef struct {
     
 } SIMULATOR;
 
-/*
-// Déclaration anticipée
-typedef struct Statistics Statistics;
 
-// Type de fonction
-typedef float (*GetUsageFunc)(Statistics*);
-
-// Définition de la structure
-struct Statistics {
-    float cpu_busy_ms;
-    float cpu_idle_ms;
-    int context_switches;
-    float total_waiting_time;
-    float total_turnaround_time;
-    
-    // Méthodes (pointeurs de fonction)
-    GetUsageFunc get_cpu_usage;
-    float (*get_avg_waiting)(Statistics*);
-    float (*get_avg_turnaround)(Statistics*);
-    void (*print)(Statistics*);
-};
-*/
