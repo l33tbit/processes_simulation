@@ -43,17 +43,17 @@ bool op_ask_sort_priority() {
 
 }
 
-PCB* ask_for_next_ready_element(PCB* current_pcb) {
+PCB* op_ask_for_next_ready_element(PCB* current_pcb) {
 
 }
 
 // ordonnanceur to execution queue
-EXECUTION_QUEUE_RESPONSE* execute_instruction(INSTRUCTION* instruction) {
+EXECUTION_QUEUE_RESPONSE* op_execute_instruction(INSTRUCTION* instruction) {
 
 } 
 
 // update statistics
-bool update_schedular_statistics(ORDONNANCEUR_STATISTICS* schedular, float cpu_total_temps_usage, float cpu_temps_unoccupied, int context_switch, float total_temps_attente, float process_termine_count, float throughtput) { // must check nullty
+bool op_update_schedular_statistics(ORDONNANCEUR_STATISTICS* schedular, float cpu_total_temps_usage, float cpu_temps_unoccupied, int context_switch, float total_temps_attente, float process_termine_count, float throughtput) { // must check nullty
 
 
 }
