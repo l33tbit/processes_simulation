@@ -10,13 +10,13 @@ typedef struct { // used by process manager: many iteraction over process list b
 } pcb_list; // stand for pcb first came
 
 typedef struct {
-    int pid; // l identifier du processus
+    int pid;; // l identifier du processus
     PCB* pcb; // l id du pcb du processus
     bool circular;
 } PROCESS_TABLE;
 
 typedef struct {
-    int pid; // processus id
+    PCB* pcb; // pointeur du process
     READY_QUEUE_ELEMENT* next; // pointeur vers element suivant
     READY_QUEUE_ELEMENT* previous; // pointeur vers element precedent
 } READY_QUEUE_ELEMENT;
@@ -29,7 +29,7 @@ typedef struct { // ordred chaine
 
 
 typedef struct {
-    int pid; // l id processus
+    PCB* pcb; // l pointeur du processus
     RESSOURCE_ELEMENT* ressource; // ressource needed to execute the instruction
 } BLOCKED_QUEUE_ELEMENT;
 
@@ -43,7 +43,7 @@ typedef struct { // circular chaine
 typedef struct {
     PCB* first;
     int size;
-} pcbs_and_size
+} pcbs_and_size;
 
 typedef struct {
     PROCESS_TABLE* process_table; // pointeur vers process table
@@ -59,8 +59,8 @@ typedef struct {
 
     // process table related
     pcbs_and_size* (*get_all_processus)(FILE* buffer); // should count while retrieving return struct that has first PCB* and size we'll get all process append them to a listn then assign pid,after that we ll push them into process list
-    pcbs_and_size* (*sort_by_f_c)(pcbs_and_size* process_list); // process_list created by get_all_processus
-    pcbs_and_size* (*sort_by_r_time)(pcbs_and_size* process_list); // process_list by get_all_processus
+    pcbs_and_size* (*sort_by_fc)(pcbs_and_size* process_list); // process_list created by get_all_processus
+    pcbs_and_size* (*sort_by_rt)(pcbs_and_size* process_list); // process_list by get_all_processus
     pcbs_and_size* (*sort_by_priority)(pcbs_and_size* process_list);  // same
     pcbs_and_size* (*sort_by_burst)(pcbs_and_size* process_list); // same
     bool (*push_all_to_process_table)(READY_QUEUE* ready_queue, pcbs_and_size* pcb_list);  // list got by the sorting function
@@ -72,7 +72,13 @@ typedef struct {
     bool (*update_pcb_all)(PCB* pcb);
 
     //ready queue related
-    
+    READY_QUEUE* (*create_ready_queue)(pcbs_and_size* sorted_list); // LIST CREATED NEED TO BEE FREE AFRTER ASSIGNING IT TO the proces_manager ready queue
+    bool (*delete_from_ready_queue)(READY_QUEUE* ready_queue, PCB* pcb); // the chaine node should be freed
+    bool (*move_process_to_ready)(READY_QUEUE* ready_queue, PCB* pcb);
+
+    // bloqued queue related
+    bool (*add_process_to_blocked_queue)(BLOCKED_QUEUE* blocked_queue, PCB* pcb);
+    bool (*deletre_from_blocked_queue)(BLOCKED_QUEUE* blocked_queue, PCB* pcb);
 
 
 
