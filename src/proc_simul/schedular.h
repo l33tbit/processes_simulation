@@ -2,6 +2,7 @@
 
 #include "process.h" // for pcb
 #include "simulator.h" // for SIMULATOR
+#include "execution_queue.h" // for the exec queue
 
 typedef enum {
     RR, SRTF, PPP, FCFS, SJF
@@ -23,17 +24,9 @@ typedef struct {
 
 
 typedef struct {
-    int id; // l id du composant en train d'executer
-    char name[10]; // name du composant qui execute
-
-    INSTRUCTION* current_instruction; // l instruction en train de s'executer
-    PCB* current_process; // process en train de s'executer
-    int process_id; // l'pid du current process
-} EXECUTION_QUEUE;
-
-typedef struct {
     Algorithms algorithm;
     PCB* exec_proc; // processus en train de s'executer
+    int current_pid; // pid du processus en cours d'exec
     
     int quantum; // quantum de time pour RR
     struct tm start;
@@ -48,11 +41,22 @@ typedef struct {
     ORDONNANCEUR_STATISTICS* statistics; // pointeur vers les statistics du schedular
 
 
+    // functions 
+    // on start
+    bool (*create_execution_queue)();
+    bool (*create_statistics)();
 
+    // ordonnanceur to simulator
+    bool (*need_ressources)(RESSOURCE_ELEMENT* ressource_needed); // return 1 if ressource is available marked unavailable
+    bool (*ressource_is_free)(RESSOURCE_ELEMENT* ressource); // return 1 if ressource succesfully free (for error handling)
+    bool (*update_cpu_time_used)(PCB* process, float inc); // shoudld declancher calcul remaining time inc the value to add to time, because can only increasing not decreasing
+    bool (*update_process)(PCB* process, float temps_fin, float tournround, float temps_attente); // when updating temps fin mark process terminated
+    bool (*ask_sort_rt)(); // ask simulator to tell process manager to sort by remaining time ; pour srtf
+    bool (*ask_sort_priority)(); // ask simulator to tell process manager to sort by priority ; pour ppp
+    PCB* (*ask_for_next_ready_element)();
 
-
-
-
+    // ordonnanceur to execution queue
+    EXECUTION_QUEUE_RESPONSE* (*execute_instruction)(INSTRUCTION* instruction); // instruction to execute
 
 
 } ORDONNANCEUR;

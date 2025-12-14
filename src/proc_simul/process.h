@@ -12,9 +12,11 @@ typedef enum {
     NOT_STARTED, EXECUTING, BLOCKED, COMPLETED
 } INSTRUCTION_STATE;
 
+typedef struct PCB PCB; //forward declaration because pcb is inside instruction and instruction is inside pcb
+
 typedef struct {
     uint32_t* instruct_id; // the id of instruction because process can stop at it if need ressources, pointer because it can be too long
-    int process_it; // the id of the process owner
+    PCB* process; // the id of the process owner
 
     float time_remaining; // in nano seconds
     RESSOURCE_ELEMENT* type; // type of instruction which is ressource needed
@@ -30,7 +32,7 @@ typedef struct {
     int tournround; // temps terminer - temps arrive
 } PROCESS_STATISTICS;
 
-typedef struct {
+struct {
     int pid;
     char process_name[20];
     char user_id[20];
@@ -46,7 +48,7 @@ typedef struct {
     int burst_time; // total temps necessaire en ms pour l'exec . burst = compte_temps + temps_restant
     int cpu_time_used; // temps cpu consomme en ms init 0
     int remaining_time; // temps restant : = burst - cpu_time_used
-    long cpu_usage; // 
+    long cpu_usage; // initialized as 0
 
     PROCESS_STATISTICS* statistics; 
 
