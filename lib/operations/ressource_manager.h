@@ -6,7 +6,7 @@
 
 
 // on start
-RESSOURCES_LIST* create_ressource_list() {
+RESSOURCES_LIST* op_create_ressource_list() {
 
 }
 
