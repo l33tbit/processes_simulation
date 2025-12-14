@@ -77,9 +77,8 @@ typedef struct {
     bool (*move_process_to_ready)(READY_QUEUE* ready_queue, PCB* pcb);
 
     // bloqued queue related
-    bool (*add_process_to_blocked_queue)(BLOCKED_QUEUE* blocked_queue, PCB* pcb);
-    bool (*deletre_from_blocked_queue)(BLOCKED_QUEUE* blocked_queue, PCB* pcb);
-
-
-
+    bool (*add_process_to_blocked_queue)(BLOCKED_QUEUE* blocked_queue, PCB* pcb); // should covert pcb to BLOCKED_QUEUE_ELEMENT then push it
+    BLOCKED_QUEUE_ELEMENT* (*delete_from_blocked_queue)(BLOCKED_QUEUE* blocked_queue, PCB* pcb); // return the element 
+    BLOCKED_QUEUE_ELEMENT* (*get_blocked_queue_element)(BLOCKED_QUEUE* blocked_queue, PCB* pcb); // return the element with the ressource needed from pcb 
+    
 } PROCESS_MANAGER;
