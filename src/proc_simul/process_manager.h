@@ -68,5 +68,12 @@ typedef struct {
     //pcb related
     bool (*mark_process_terminate_update_temps_fin)(PCB* pcb);
     bool (*update_temps_arrive)(PCB* pcb);
+    bool (*update_cpu_usage_and_remaining_time)(PCB* pcb);
+    bool (*update_pcb_all)(PCB* pcb);
+
+    //ready queue related
+    
+
+
 
 } PROCESS_MANAGER;
