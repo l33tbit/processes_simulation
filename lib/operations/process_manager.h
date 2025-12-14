@@ -5,7 +5,6 @@
 #include "structs/process.h"
 
 // initialization
-
 PROCESS_TABLE* op_create_process_table(bool circular) {
 
 }

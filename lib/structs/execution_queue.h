@@ -1,8 +1,7 @@
 #pragma once
 
 
-#include "process.h"
-
+#include "structs/process.h"
 
 typedef enum {
     NEED_RESSOURCE, DONE
