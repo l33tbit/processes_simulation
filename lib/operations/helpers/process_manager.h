@@ -175,12 +175,11 @@ insruction_parser_return* instruction_parser(char* value) { // retrieve instruct
     char instruction[4] = {0}; // initializing it to prevent random value
 
     int instruction_char_count = 0;
-    for (int i = 1; i < 20000; i++) {// instructions_count // initializing i to 1 bach na9zo hadak '['
+    for (int i = 1; i < 20001; i++) {// instructions_count // initializing i to 1 bach na9zo hadak '['
         if (value[i] != ',' && instruction_char_count < 3) { // if value is a ressource character and we didnt arrive to the end which is 3characters
             instruction[instruction_char_count] = value[i]; // character at instruction retriving variable = fgets or instructions line char
             instruction_char_count++;
-
-        } else if (value[i] == ',' && instruction_char_count > 2) { // if tge char in instructions line is comma and instruction_char_count is > 0 mean that there is characters in instruction variable so we have a ressource
+        } else if (value[i] == ',' && instruction_char_count == 3) { // if tge char in instructions line is comma and instruction_char_count is 3 mean that valid instruction variable so we have a ressource
             if (instruction_char_count != 3) { // ressource is more than 3 characters
                 // "concurrence bagha la vendetta"
                 fprintf(stderr, "ERROR ON: instruction_parser failed at line %s\nan instruction %s with length %d is more than allowed", value, instruction, instruction_char_count);
@@ -195,11 +194,12 @@ insruction_parser_return* instruction_parser(char* value) { // retrieve instruct
                 free(returned);
                 exit(1);
             }
-            instruction[3] = '\0'
+            instruction[3] = '\0';
             strcpy(returned->instructions[returned->count], instruction); // copy the string to the allocated instruction but if the instruction is not ended with \0 strcpy will copy more exceeding the buffer
             returned->instructions[returned->count][3] = '\0';
             returned->count++;
             instruction_char_count = 0;
+            instruction[0] = "\0"; // clearing the array
         } else if (value[i] == ']') { // didnt merge it with previous if for time, like ida zedt wahed l if (value[i] == '[')  ghayexecuteha bzf which is bad
             if (instruction_char_count != 3) { // ressource is more than 3 characters
                 // "concurrence bagha la vendetta"
@@ -215,11 +215,11 @@ insruction_parser_return* instruction_parser(char* value) { // retrieve instruct
                 free(returned);
                 exit(1);
             }
-            strcpy(returned->instructions[returned->count], instruction); // copy the string to the allocated instruction
             instruction[3] = '\0';
+            strcpy(returned->instructions[returned->count], instruction); // copy the string to the allocated instruction
             returned->count++;
             break; // instead of setting char count to 0 break the loop and return the parsed instructions
-        } else if (i == 20000) {
+        } else if (i == 20000) { // that why we make 20001 in the condition
             fprintf(stderr, "ERROR ON: instruction_parser the ] ending instruction never found\n");
             free(returned->instructions);
             free(returned);
