@@ -24,11 +24,11 @@ typedef struct {
 } INSTRUCTION;
 
 typedef struct {
-    struct tm temps_arrive; // located in time.h
-    struct tm temps_creation;
-    struct tm temps_fin;
+    time_t temps_arrive; // located in time.h
+    time_t tm temps_creation;
+    time_t tm temps_fin;
     
-    float temps_attente; // gap entre temps arrive & temps exec
+    float temps_attente; // gap entre temps arrive & temps exec // need to be init 0
     int tournround; // temps terminer - temps arrive
 } PROCESS_STATISTICS;
 
@@ -62,4 +62,8 @@ typedef struct {
     bool (*update_temps_arrive) (struct PCB* self, struct tm temps_arrive);
     bool (*update_temps_creation) (struct PCB* self, struct tm temps_creation);
     bool (*update_temps_fin) (struct PCB* self, struct tm temps_fin);
+    struct PCB* (*get_next_pcb)(struct PCB* self);
+    struct PCB* (*get_previous_pcb)(struct PCB* self);
+    struct PCB* (*define_next)(struct PCB* self, struct PCB* next);
+    struct PCB* (*define_previous)(struct PCB* self, struct PCB* previous);
 } PCB;

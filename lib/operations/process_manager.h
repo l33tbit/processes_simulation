@@ -1,10 +1,10 @@
 #pragma once
 #include <stdbool.h>
 
-
 #include "structs/process_manager.h"
 #include "structs/process.h"
 #include "operations/helpers/process_manager.h"
+#include "operations/process.h"
 
 // initialization
 PROCESS_TABLE_ELEMENT* op_create_process_table(FILE* buffer) {
@@ -79,5 +79,20 @@ BLOCKED_QUEUE_ELEMENT* op_delete_from_blocked_queue(BLOCKED_QUEUE_ELEMENT* block
 }
 
 BLOCKED_QUEUE_ELEMENT* op_get_blocked_queue_element(BLOCKED_QUEUE_ELEMENT* blocked_queue_head, PCB* pcb) {
+
+}
+
+
+PCB* op_assign_functions_to_pcb(PCB* pcb) {
+    pcb->update_temps_attente = op_update_temps_attente;
+    pcb->update_turnround = op_update_turnround;
+    pcb->mark_instruction_terminated = op_mark_instruction_terminated;
+    pcb->update_temps_arrive = op_update_temps_arrive;
+    pcb->update_temps_creation
+    pcb->update_temps_fin = op_update_temps_fin;
+    pcb->get_next_pcb
+    pcb->get_previous_pcb
+    pcb->define_next
+    pcb->define_previous
 
 }

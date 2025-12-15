@@ -64,6 +64,11 @@ typedef struct {
     // bloqued queue related
     BLOCKED_QUEUE_ELEMENT* (*add_process_to_blocked_queue)(BLOCKED_QUEUE_ELEMENT* blocked_queue_head, PCB* pcb); // should covert pcb to BLOCKED_QUEUE_ELEMENT then push it
     BLOCKED_QUEUE_ELEMENT* (*delete_from_blocked_queue)(BLOCKED_QUEUE_ELEMENT* blocked_queue_head, PCB* pcb); // return the element 
-    BLOCKED_QUEUE_ELEMENT* (*get_blocked_queue_element)(BLOCKED_QUEUE_ELEMENT* blocked_queue_head, PCB* pcb); // return the element with the ressource needed from pcb 
+    BLOCKED_QUEUE_ELEMENT* (*get_blocked_queue_element)(BLOCKED_QUEUE_ELEMENT* blocked_queue_head, PCB* pcb); // return the element with the ressource needed from pcb
+    
+    // assign function to the pcb
+    PCB* (*assign_functions_to_pcb)(PCB* pcb) {
+
+    }
     
 } PROCESS_MANAGER;
