@@ -41,7 +41,7 @@ typedef struct {
     E_etat etat; // one of the values in the enum e_etat
     int prioritie; // priorities from 1 to 5 ; 1-critical
 
-    INSTRUCTION* instructions;
+    INSTRUCTION* instructions_head; // change to a chained list
     long programme_compteur; // max 9,223,372,036,854,775,807 instruction
     int memoire_necessaire; // en MB
     INSTRUCTION* current_instruction; // l'instruction en train de s executer

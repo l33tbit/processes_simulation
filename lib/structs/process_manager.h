@@ -6,9 +6,9 @@
 #include "structs/ressource.h" // for RESSOURCE_ELEMENT
 
 // structures nedded par les fonctions du process_manager
-typedef struct { // used by process manager: many iteraction over process list but obe contact with ready queue for time reducing
-    PCB* first_element;
-} pcb_list; // stand for pcb first came
+// typedef struct { // used by process manager: many iteraction over process list but obe contact with ready queue for time reducing
+//     PCB* first_element;
+// } pcb_list; // stand for pcb first came
 
 typedef struct {
     int pid; // l identifier du processus
@@ -16,43 +16,44 @@ typedef struct {
     PROCESS_TABLE_ELEMENT* next;
 } PROCESS_TABLE_ELEMENT;
 
-typedef struct {
-    PROCESS_TABLE_ELEMENT* head; // first element
-} PROCESS_TABLE;
+// typedef struct {
+//     PROCESS_TABLE_ELEMENT* head; // first element
+// } PROCESS_TABLE;
 
-typedef struct {
+typedef struct READY_QUEUE_ELEMENT {
     PCB* pcb; // pointeur du process
-    READY_QUEUE_ELEMENT* next; // pointeur vers element suivant
-    READY_QUEUE_ELEMENT* previous; // pointeur vers element precedent
+    struct READY_QUEUE_ELEMENT* next; // pointeur vers element suivant
+    struct READY_QUEUE_ELEMENT* previous; // pointeur vers element precedent
 } READY_QUEUE_ELEMENT;
 
-typedef struct { // ordred chaine
-    READY_QUEUE_ELEMENT* head; // pointeur vers premier element du chaine
-} READY_QUEUE;
+// typedef struct { // ordred chaine
+//     READY_QUEUE_ELEMENT* head; // pointeur vers premier element du chaine
+// } READY_QUEUE;
 
 
 typedef struct {
     PCB* pcb; // l pointeur du processus
     RESSOURCE_ELEMENT* ressource; // ressource needed to execute the instruction
+    struct BLOCKED_QUEUE_ELEMENT next;
 } BLOCKED_QUEUE_ELEMENT;
 
-typedef struct { // circular chaine
-    BLOCKED_QUEUE_ELEMENT* head; // first elme
-    // BLOCKED_QUEUE_ELEMENT* tail; // last one
-    int size; // how many elements
-} BLOCKED_QUEUE;
+// typedef struct { // circular chaine
+//     BLOCKED_QUEUE_ELEMENT* head; // first elme
+//     // BLOCKED_QUEUE_ELEMENT* tail; // last one
+//     // int size; // how many elements
+// } BLOCKED_QUEUE;
 
-// get_all_processus & sort function helper
-typedef struct {
-    PCB* first;
-    int size;
-} pcbs_and_size;
+// // get_all_processus & sort function helper
+// typedef struct {
+//     PCB* first;
+//     int size;
+// } pcbs_and_size;
 
 typedef struct {
-    PROCESS_TABLE* process_table; // pointeur vers process table
+    PROCESS_TABLE* process_table_head; // pointeur vers process table
     int process_count; // n processes
-    READY_QUEUE* ready_queue; // pointer to ready chaine
-    BLOCKED_QUEUE* blocked_queue; // pointer to blocked
+    READY_QUEUE* ready_queue_head; // pointer to ready chaine
+    BLOCKED_QUEUE* blocked_queue_head; // pointer to blocked
     FILE* processus_buffer;
     // RESSOURCE* ressources; // in the retrieving should retrieve ressources needed also if a ressource doesn't match the enumeration throw an error (ressource anavailable)
 
@@ -66,7 +67,7 @@ typedef struct {
     pcbs_and_size* (*get_all_processus)(FILE* buffer); // should count while retrieving return struct that has first PCB* and size we'll get all process append them to a listn then assign pid,after that we ll push them into process list  *maybe*[ should check the ressources of each process compare to enumeration,]
     pcbs_and_size* (*sort_by_fc)(pcbs_and_size* process_list); // process_list created by get_all_processus
     pcbs_and_size* (*sort_by_rt)(pcbs_and_size* process_list); // process_list by get_all_processus
-    pcbs_and_size* (*sort_by_priority)(pcbs_and_size* process_list);  // same
+    pcbs_and_size* (*sort_by_priority)(pcbhead, s_and_size* process_list);  // same
     pcbs_and_size* (*sort_by_burst)(pcbs_and_size* process_list); // same
     bool (*push_all_to_process_table)(PROCESS_TABLE* process_table, pcbs_and_size* pcb_list);  // list got by the sorting function
 

@@ -4,14 +4,13 @@
 
 #include "structs/ressource.h"
 
-typedef struct {
-    RESSOURCE_ELEMENT* head; // first element in chaine
-    RESSOURCE_ELEMENT* tail; // last one
-    int size; // how many element in the chaine<
-} RESSOURCES_LIST; // chain ressource because we need size
+// typedef struct {
+//     RESSOURCE_ELEMENT* head; // first element in chaine
+//     int size; // how many element in the chaine
+// } RESSOURCES_LIST; // chain ressource because we need size
 
 typedef struct {
-    RESSOURCES_LIST* ressources; // again using malloc to allocate N ressources
+    RESSOURCE_ELEMENT* ressources; // again using malloc to allocate N ressources
     int ressource_count; // n ressources
 
     //functions
