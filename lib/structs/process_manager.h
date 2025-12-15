@@ -8,17 +8,16 @@
 // structures nedded par les fonctions du process_manager
 typedef struct { // used by process manager: many iteraction over process list but obe contact with ready queue for time reducing
     PCB* first_element;
-    int size;
 } pcb_list; // stand for pcb first came
 
 typedef struct {
     int pid; // l identifier du processus
     PCB* pcb; // l id du pcb du processus
+    PROCESS_TABLE_ELEMENT* next;
 } PROCESS_TABLE_ELEMENT;
 
 typedef struct {
     PROCESS_TABLE_ELEMENT* head; // first element
-    int size;
 } PROCESS_TABLE;
 
 typedef struct {
@@ -29,8 +28,6 @@ typedef struct {
 
 typedef struct { // ordred chaine
     READY_QUEUE_ELEMENT* head; // pointeur vers premier element du chaine
-    READY_QUEUE_ELEMENT* tail; // pointeur vers last element
-    int size; // nombre du nodes
 } READY_QUEUE;
 
 
@@ -41,7 +38,7 @@ typedef struct {
 
 typedef struct { // circular chaine
     BLOCKED_QUEUE_ELEMENT* head; // first elme
-    BLOCKED_QUEUE_ELEMENT* tail; // last one
+    // BLOCKED_QUEUE_ELEMENT* tail; // last one
     int size; // how many elements
 } BLOCKED_QUEUE;
 
