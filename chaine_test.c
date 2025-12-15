@@ -118,6 +118,37 @@ node* search_node(node* head, int v_search) { // will return NULL if value not f
     return (node_searched == NULL) ? NULL : node_searched;
 }
 
+node* alter_nodes(node* head, int v1, int v2) {
+    node* value1 = search_node(head, v1);
+    node* value2 = search_node(head, v2);
+
+    node* temp = (node*)malloc(sizeof(node));
+    temp->data = value1->data;
+    value1->data = value2->data;
+    value2->data = temp->data;
+    free(temp);
+    return head;
+}
+
+node* sort_ascending(node* head) {
+    node* current = head;
+    node* index = head;
+    int temp;
+    while (current != NULL) {
+        index = current->next;
+        while(index != NULL) {
+            if (current->data > index->data) {
+                temp = current->data;
+                current->data = index->data;
+                index->data = temp;
+            }
+            index = index->next;
+        }
+        current = current->next;
+    }
+    return head;
+}
+
 void free_list(node* head) {
     node* temp;
     while (head != NULL) {
@@ -153,7 +184,23 @@ int main() {
     printf("5 - second element's data %d\n", head->next->data);
     printf("5 - third element's data %d\n", head->next->next->data);
     printf("5 - fourth element's data %d\n", head->next->next->next->data);
-    printf("5 - fifth element's data %d\n", head->next->next->next->next->data);
+    printf("5 - fifth element's data %d\n\n\n", head->next->next->next->next->data);
+
+    head = alter_nodes(head, 7, 9);
+    head = alter_nodes(head, 5, 6);
+    printf("5 - first element's data %d\n", head->data);
+    printf("5 - second element's data %d\n", head->next->data);
+    printf("5 - third element's data %d\n", head->next->next->data);
+    printf("5 - fourth element's data %d\n", head->next->next->next->data);
+    printf("5 - fifth element's data %d\n\n\n", head->next->next->next->next->data);
+
+    head = sort_ascending(head);
+    printf("5 - first element's data %d\n", head->data);
+    printf("5 - second element's data %d\n", head->next->data);
+    printf("5 - third element's data %d\n", head->next->next->data);
+    printf("5 - fourth element's data %d\n", head->next->next->next->data);
+    printf("5 - fifth element's data %d\n\n\n", head->next->next->next->next->data);
+
 
     free_list(head);
     return 0;

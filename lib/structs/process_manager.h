@@ -59,8 +59,8 @@ typedef struct {
     // functions
     // on start
     PROCESS_TABLE* (*create_process_table)(FILE* buffer); // need to be assigned to process_table field and update the process_count field// create a chaine circulaire ou non circular
-    READY_QUEUE* (*create_ready_queue)(int size); // size which is process count field
-    BLOCKED_QUEUE* (*create_blocked_queue)(int size); // will initialize by size 0 i think
+    READY_QUEUE* (*create_ready_queue)(); // size which is process count field
+    BLOCKED_QUEUE* (*create_blocked_queue)(); // will initialize by size 0 i think
 
     // process table related  (when creating the pcb pcd_statistics should also be created)
     pcbs_and_size* (*get_all_processus)(FILE* buffer); // should count while retrieving return struct that has first PCB* and size we'll get all process append them to a listn then assign pid,after that we ll push them into process list  *maybe*[ should check the ressources of each process compare to enumeration,]
