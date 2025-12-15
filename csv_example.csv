@@ -25,4 +25,4 @@ typedef struct {
 
 
 
-process_name(20),user_id(20),priority(from 1 to 5),[instruction max 20000 3char each],n_instruction,memoire,burst,
+process_name(20),user_id(20),priority(from 1 to 5),[instruction max 20000 3char each shouldnt have spaces],n_instruction,memoire,burst,

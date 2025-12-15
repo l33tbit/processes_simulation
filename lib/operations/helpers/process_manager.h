@@ -95,7 +95,7 @@ parser_return* parser(char* line) {
             switch (value_number) {
                 case 0:
                     if (sizeof(value) > 20) {
-                        printf("ERROR ON: parser function process line in csv '%s' \nhas exceded 20 caracter in process_name\n", line);
+                        fprintf(stderr, "ERROR ON: parser function process line in csv '%s' \nhas exceded 20 caracter in process_name\n", line);
                         exit(1);
                     }
                     (value > 20) ? 
@@ -103,14 +103,14 @@ parser_return* parser(char* line) {
                     break;    
                 case 1:
                     if (sizeof(value) > 20) {
-                        printf("ERROR ON: parser function process line in csv '%s' \nhas exceded 20 caracter in user_id\n", line);
+                        fprintf(stderr, "ERROR ON: parser function process line in csv '%s' \nhas exceded 20 caracter in user_id\n", line);
                         exit(1);
                     }
                     parsed_line->user_id = value;
                     break;    
                 case 2:
                     if (value > 5 || value < 1) {
-                        printf("ERROR ON: parser function process line in csv '%s' \npriority out of range(1-5)\n", line);
+                        fprintf(stderr, "ERROR ON: parser function process line in csv '%s' \npriority out of range(1-5)\n", line);
                         exit(1);
                     }
                     parsed_line->priority = atoi(value); // atoi stand for ascii to integer and located in stdlib; maybe make ours if we still have time
@@ -119,8 +119,8 @@ parser_return* parser(char* line) {
                     if (sizeof(value) < 1) {
                         parsed_line->unvalid_process = 1;
                     }
-                    insruction_parser_return parsed_instructions = instruction_parser(value);
-
+                    insruction_parser_return* parsed_instructions = instruction_parser(value);
+                    
             }
 
             char_count = 0;
@@ -128,13 +128,13 @@ parser_return* parser(char* line) {
             memset(value, 0, sizeof(value)); // setting all the bytes in memory will make it equivalent to empty string
 
             if (value_number > 6) {
-                printf("ERROR ON: parser function (csv file data unvalid)", line);
+                fprintf(stderr, "ERROR ON: parser function (csv file data unvalid)", line);
                 exit(1);
             }
         } else if (line[i] == '\n') {
             break;
         } else {
-            printf("ERROR ON: parser function", line);
+            fprintf(stderr, "ERROR ON: parser function", line);
             exit(1);
         }
     }
@@ -143,31 +143,42 @@ parser_return* parser(char* line) {
 
 
 typedef struct {
-    INSTRUCTION* head;
-    int size;
+    char** instructions;
+    int count;
 } insruction_parser_return;
 
 insruction_parser_return* instruction_parser(char* value) { // retrieve instruction name
-    
-    char* instructions[20000];
-    int instruction_count;
-    char instruction[3];
+    insruction_parser_return* returned = (insruction_parser_return*)malloc(sizeof(insruction_parser_return));
+    returned->instructions = malloc(20000 * sizeof(char*)); // 20000 instruction each instruction is a pointer to a string and has exactly 3caracters
+    if (returned == NULL || returned->instructions == NULL) {
+        fprintf(stderr, "ERROR ON: instruction_parser function, dynamic allocation failed\n");
+        exit(1);
+    }
 
-    int char_count = 0;
-    int instruct_count = 0;
+    returned->count = 0;
+    char instruction[4]; 
+
+    int instruction_char_count = 0;
     for (int i = 1; i < 20000; i++) {// instructions_count // initializing i to 1 bach na9zo hadak '['
-        if (value[char_count] != ',' && instruct_count < 3) {
-            instruction[instruct_count] = value[char_count];
-            instruct_count++;
-        } else if ((value[char_count] == ',' || instruct_count > 2) && instruct_count > 0) { // for checking unvalid instruction
-            instruction_count++;
-            instruct_count = 0;
-            instructions[instruct_count] = instruction;
-        } else if (value[char_count] == ']') {
+        if (value[i] != ',' && instruction_char_count < 3) {
+            instruction[instruction_char_count] = value[i];
+            instruction_char_count++;
+        } else if ((value[i] == ',' || instruction_char_count > 2) && instruction_char_count > 0) { // for checking unvalid instruction
+            returned->instructions[returned->count] = malloc(4 * sizeof(char)); // max 3 + null terminator
+            if (returned->instructions[returned->count] == NULL) {
+                fprintf(stderr, "ERROR ON: instruction_parser failed allocating the instruction\n");
+                exit(1);
+            }
+            instruction[3] = '\0';
+            strcpy(returned->instructions[returned->count], instruction); // copy the string to the allocated instruction
+            returned->count++;
+            instruction_char_count = 0;
+        } else if (value[i] == ']') {
             break;
         } else {
-            printf("ERROR ON: instruction_parser function process line in csv \n '%s' unvalid instruction\n", value);
+            fprintf(stderr, "ERROR ON: instruction_parser function process line in csv \n '%s' unvalid instruction\n", value);
             exit(1);
         }
     }
+    return returned;
 }
