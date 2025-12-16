@@ -2,6 +2,8 @@
 
 
 #include "structs/ressource.h" 
+#include <time.h>
+#include <stdbool.h>
 
 typedef enum {
     READY, BLOCKED, EXECUTION, TERMINATED
@@ -14,7 +16,7 @@ typedef enum {
 
 
 typedef struct {
-    uint32_t* instruct_id; // the id of instruction because process can stop at it if need ressources, pointer because it can be too long
+    int* instruct_id; // the id of instruction because process can stop at it if need ressources, pointer because it can be too long
     PCB* process; // the id of the process owner
 
     float time_remaining; // in nano seconds
@@ -25,8 +27,8 @@ typedef struct {
 
 typedef struct {
     time_t temps_arrive; // located in time.h
-    time_t tm temps_creation;
-    time_t tm temps_fin;
+    time_t temps_creation;
+    time_t temps_fin;
     
     float temps_attente; // gap entre temps arrive & temps exec // need to be init 0
     int tournround; // temps terminer - temps arrive
