@@ -1,6 +1,7 @@
 #pragma once
 
 #include <time.h>
+#include "structs/ressource.h"
 
 
 typedef enum {
@@ -93,7 +94,7 @@ typedef struct { // ordred chaine
 
 
 
-typedef struct {
+typedef struct BLOCKED_QUEUE_ELEMENT {
     int pid; // l id processus
     RESSOURCE_ELEMENT* ressource; // ressource needed to execute the instruction
 } BLOCKED_QUEUE_ELEMENT;
@@ -154,7 +155,7 @@ typedef struct {
 typedef
 
 
-typedef struct {
+typedef struct PROCESS_MANAGER {
     PROCESS_TABLE* process_table; // pointeur vers process table
     int process_count; // n processes
     READY_QUEUE* ready_queue; // pointer to ready chaine
