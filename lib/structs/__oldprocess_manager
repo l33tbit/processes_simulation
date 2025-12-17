@@ -35,7 +35,7 @@ typedef struct READY_QUEUE_ELEMENT {
 typedef struct BLOCKED_QUEUE_ELEMENT {
     PCB* pcb; // l pointeur du processus
     RESSOURCE_ELEMENT* ressource; // ressource needed to execute the instruction
-    struct BLOCKED_QUEUE_ELEMENT next;
+    struct BLOCKED_QUEUE_ELEMENT* next;
 } BLOCKED_QUEUE_ELEMENT;
 
 // typedef struct { // circular chaine

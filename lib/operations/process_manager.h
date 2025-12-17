@@ -330,35 +330,103 @@ PCB* op_delete_from_ready_queue(PCB* ready_queue_head, PCB* pcb) {// the chaine 
         return ready_queue_head;
     }
 
-    PCB* prev = ready_queue_head;
-    PCB* iter = ready_queue_head->pid_sibling_next;
-
-    while (iter != NULL && iter != ready_queue_head->pid_sibling_next) {
-        if (iter == pcb) {
-            
-        }
-        iter = iter->pid_sibling_next;
+    // if the head that need to be deleted
+    if (ready_queue_head == pcb) {
+        PCB* hold = ready_queue_head->pid_sibling_next;
+        free(ready_queue_head);
+        return hold;
     }
 
+    // if not in the start
+    PCB* prcd = ready_queue_head;
+    PCB* current = ready_queue_head->pid_sibling_next;
+
+    while (current != NULL) {
+        if (current == pcb) { // found
+            // jump it and free it
+            prcd->pid_sibling_next = current->pid_sibling_next;
+            free(current);
+            break;
+        }
+        prcd = current;
+        current = current->pid_sibling_next;
+    }
+
+    return ready_queue_head;
 }
-
-PCB* op_move_process_to_ready(PCB* ready_queue_head, PCB* pcb) {
-
-} 
 
 // bloqued queue related
 PCB* op_add_process_to_blocked_queue(PCB* blocked_queue_head, PCB* pcb) { // should covert pcb to BLOCKED_QUEUE_ELEMENT then push it
 
+    if (blocked_queue_head == NULL) { // if there is no process in the blocked the pcb will be the head
+        return pcb;
+    }
+
+    PCB* iter = blocked_queue_head;
+
+    while (iter->pid_sibling_next != NULL) {
+        iter = iter->pid_sibling_next;
+    }
+
+    iter->pid_sibling_next = pcb;
+
+    return blocked_queue_head;
 }
 
 PCB* op_delete_from_blocked_queue(PCB* blocked_queue_head, PCB* pcb) {
 
+    if (blocked_queue_head == NULL) {
+        return NULL;
+    }
+
+    if (pcb == NULL) {
+        fprintf(stderr, "ERROR ON: op_delete_from_blocked_queue pcb passed is null");
+        exit(1);    
+    }
+
+    if (blocked_queue_head == pcb) {
+        return NULL;
+    }
+
+    PCB* prev = blocked_queue_head;
+    PCB* current = blocked_queue_head->pid_sibling_next;
+
+    while (current != NULL) {
+        if (current == pcb) {
+            prev->pid_sibling_next = current->pid_sibling_next;
+            free(current);
+            break;
+        }
+        prev = current;        
+        current = current->pid_sibling_next;
+    }
 }
 
 PCB* op_get_blocked_queue_element(PCB* blocked_queue_head, PCB* pcb) {
 
-}
+    if (blocked_queue_head == NULL || pcb == NULL) {
+        return blocked_queue_head;
+    }
 
+    PCB* got = NULL;
+    PCB* iter = blocked_queue_head;
+
+
+    // if element is in the start
+    if (iter == pcb) {
+        return iter;
+    }
+
+    // seach and return
+    while (iter != NULL) {
+        if (iter == pcb) {
+            return pcb;
+        }
+        iter = iter->pid_sibling_next;
+    }
+
+    return NULL;
+}
 
 PCB* op_assign_functions_to_pcb(PCB* pcb) {
     pcb->update_temps_attente = op_update_temps_attente;

@@ -116,6 +116,14 @@ void testing_process_table_creation_and_ready_queue() {
     // checked all good
 }   
 
+// testing process functions
+
+
+
+
+
+
+
 /*
 gcc -Wall -Wextra -std=c11 \
     -I./lib \
