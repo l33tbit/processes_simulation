@@ -294,9 +294,6 @@ PCB* op_push_to_ready_queue(PCB* ready_queue_head, struct PCB* pcb) {// LIST CRE
         return ready_queue_head;  // Nothing to add
     }
 
-    // init the new pcb to NULL
-    pcb->pid_sibling_next = NULL;
-
     if (ready_queue_head == NULL) {
         return pcb; // the new pcb will be the ready queue head but i think that the condition will not be true, because of the function of ready_queue
     }
@@ -309,19 +306,39 @@ PCB* op_push_to_ready_queue(PCB* ready_queue_head, struct PCB* pcb) {// LIST CRE
         pcb->pid_sibling_next = ready_queue_head; // keep it circular
     } else {
         // a simplke chaine or circular with multiple elements
-        while (last->pid)
+        while (last->pid_sibling_next != NULL && last->pid_sibling_next != ready_queue_head) { // the second check is for circularity
+            last = last->pid_sibling_next; // jump by one element
+        }
+
+        // insert in the end
+        last->pid_sibling_next = pcb;
+        pcb->pid_sibling_next = NULL;
 
 
+        // if circular
+        if (last->pid_sibling_next == ready_queue_head) {
+            pcb->pid_sibling_next = ready_queue_head;
+        }
     }
-
     
-
-
-    last->pid_sibling_next = pcb; // push the last
     return ready_queue_head;
 }
 
 PCB* op_delete_from_ready_queue(PCB* ready_queue_head, PCB* pcb) {// the chaine node should be freed
+
+    if (ready_queue_head == NULL || pcb == NULL) {
+        return ready_queue_head;
+    }
+
+    PCB* prev = ready_queue_head;
+    PCB* iter = ready_queue_head->pid_sibling_next;
+
+    while (iter != NULL && iter != ready_queue_head->pid_sibling_next) {
+        if (iter == pcb) {
+            
+        }
+        iter = iter->pid_sibling_next;
+    }
 
 }
 
