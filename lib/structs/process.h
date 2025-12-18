@@ -22,7 +22,7 @@ typedef struct INSTRUCTION{
     int instruct_id; // the id of instruction because process can stop at it if need ressources, pointer because it can be too long
     PCB* process; // the id of the process owner
 
-    float time_remaining; // in nano seconds
+    float time_remaining; // in ms
     RESSOURCE type; // type of instruction which is ressource needed
     INSTRUCTION_STATE state; // state of instruction 
     struct INSTRUCTION* next;
@@ -52,7 +52,7 @@ typedef struct PCB {
 
     float burst_time; // total temps necessaire en ms pour l'exec . burst = compte_temps + temps_restant
     float cpu_time_used; // temps cpu consomme en ms init 0
-    int remaining_time; // temps restant : = burst - cpu_time_used
+    float remaining_time; // temps restant : = burst - cpu_time_used
     int cpu_usage; // initialized as 0
 
     PROCESS_STATISTICS* statistics; 

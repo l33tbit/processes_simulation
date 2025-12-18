@@ -2,6 +2,7 @@
 
 #include <time.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 #include "structs/process.h"
 
@@ -22,7 +23,7 @@ bool op_update_temps_arrive(PCB* self, struct tm temps_arrive) {
         printf("ERROR ON: op_update_temps_arrive (NULL value)\n");
         return false;
     }
-    time_t arrive = mkdtime(&temps_arrive);
+    time_t arrive = mktime(&temps_arrive);
     self->statistics->temps_arrive = arrive;
     return true;
 }

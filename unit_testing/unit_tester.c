@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 #include "operations/helpers/process_manager.h"
+#include "operations/process_manager.h"
 #include "structs/process.h"
 
 void print_pcb(PCB* pcb) {
@@ -14,8 +15,10 @@ void print_pcb(PCB* pcb) {
     printf("programe_counter: %d\n", pcb->programme_compteur);
     printf("memoire: %d\n", pcb->memoire_necessaire);
     printf("burst time: %f\n", pcb->burst_time);
-    printf("process %s\n", ctime(&pcb->statistics->temps_creation)); // to format
+    printf("remaining time: %f\n", pcb->remaining_time);
+    printf("temps d arriver: %f\n", pcb->statistics->temps_arrive);
     printf("first instruction id: %d\n", pcb->instructions_head->instruct_id);
+    printf("process %s\n", ctime(&pcb->statistics->temps_creation)); // to format
     // INSTRUCTION* instructions_head
     INSTRUCTION* TEMP = pcb->instructions_head;
     while (TEMP->next != NULL) { // enum are intigers
@@ -55,9 +58,9 @@ PCB* testing_the_csv_parsing() {
     // heap allocated buffer
     size_t size = 10 * 1024 * 1024; // 10mbytes
 
-    char* buffer = (char*)malloc(size);
+    char* buffer_ = (char*)malloc(size);
 
-    if (!buffer) {
+    if (!buffer_) {
         fprintf(stderr, "ERROR ON: error while allocating the buffer before reading csv\n");
         exit(1);
     }
@@ -90,34 +93,40 @@ void testing_process_table_creation_and_ready_queue() {
         exit(1);
     }
 
-    PCB* ready_queue = op_create_ready_queue(head);
+    PCB* ready_queue = op_create_ready_queue(false, head);
 
     if (ready_queue == NULL) {
         fprintf(stderr, "ERROR ON: error while allocating the ready_queue before reading csv\n");
         exit(1);
     }
 
-    PCB* sorted_ready_queue = op_sort_ready_by_fc(ready_queue);
+
+
+    PCB* sorted_ready_queue = op_sort_ready_by_fc(ready_queue, false);
 
     if (sorted_ready_queue == NULL) {
         fprintf(stderr, "ERROR ON: error while allocating the sorted_ready_queue before reading csv\n");
         exit(1);
     }
 
-    while (ready_queue != NULL) {
-        print_pcb(ready_queue);
-        ready_queue = ready_queue->pid_sibling_next;
-    }
+    // till here all is good
+
+
+    // PCB* sorted_rt = (PCB*)op_sort_ready_by_rt(ready_queue);
+    // printf("sort by rt\n");
+
+    // while (ready_queue != NULL) {
+    //     print_pcb(ready_queue);
+    //     ready_queue = ready_queue->pid_sibling_next;
+    // }
 
     while (sorted_ready_queue != NULL) {
         print_pcb(sorted_ready_queue);
         sorted_ready_queue = sorted_ready_queue->pid_sibling_next;
     }
-    // checked all good
 }   
 
-// testing process functions
-
+// testing process manager functions
 
 
 
@@ -137,7 +146,13 @@ gcc -Wall -Wextra -std=c11 \
 
 int main() {
 
-    testing_the_csv_parsing();
+    // testing_process_table_creation_and_ready_queue();
+
+    PCB* pc = testing_the_csv_parsing();
+    while (pc != NULL) {
+        print_pcb(pc);
+        pc = pc->pid_sibling_next;
+    }
 
     return 0;
 }

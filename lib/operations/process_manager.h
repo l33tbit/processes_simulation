@@ -15,9 +15,9 @@ PCB* op_create_process_table(FILE* buffer) {
     // heap allocated buffer
     size_t size = 10 * 1024 * 1024; // 10mbytes
 
-    char* buffer = (char*)malloc(size);
+    char* buffera = (char*)malloc(size);
 
-    if (!buffer) {
+    if (!buffera) {
         fprintf(stderr, "ERROR ON: error while allocating the buffer before reading csv\n");
         exit(1);
     }
