@@ -155,7 +155,6 @@ gcc -Wall -Wextra -std=c11 \
   
 
 int main() {
-
     // testing_process_table_creation_and_ready_queue(); // parsed is very vawy vawygood
 
     // PCB* pc = testing_the_csv_parsing();
@@ -164,18 +163,20 @@ int main() {
     //     pc = pc->pid_sibling_next;
     // }
 
-    RESSOURCE_ELEMENT* ressources_head = testing_ressource_creator();
+    // RESSOURCE_ELEMENT* ressources_head = testing_ressource_creator();
 
-    op_mark_ressource_unavailable(ressources_head, CCC);
+    // op_mark_ressource_unavailable(ressources_head, CCC);
 
-    printf("disponibility : %d\n", op_check_if_ressource_available(ressources_head, CCC));
+    // printf("disponibility : %d\n", op_check_if_ressource_available(ressources_head, CCC));
 
-    op_mark_ressource_available(ressources_head, CCC);
-    printf("disponibility : %d\n", op_check_if_ressource_available(ressources_head, CCC));
+    // op_mark_ressource_available(ressources_head, CCC);
+    // printf("disponibility : %d\n", op_check_if_ressource_available(ressources_head, CCC));
 
-    op_mark_ressource_unavailable(ressources_head, CCC);
+    // op_mark_ressource_unavailable(ressources_head, CCC);
 
-    printf("disponibility : %d\n", op_check_if_ressource_available(ressources_head, CCC));
+    // printf("disponibility : %d\n", op_check_if_ressource_available(ressources_head, CCC));
+
+
 
     return 0;
 }
