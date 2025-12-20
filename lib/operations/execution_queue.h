@@ -33,7 +33,6 @@ typedef struct INSTRUCTION{
 
 EXECUTION_RESULT* op_execute_instruction(INSTRUCTION* instruction, float quantum) {
 
-    struct timespec ts;
 
     instruction->state = COMPLETED;
 
@@ -48,10 +47,15 @@ EXECUTION_RESULT* op_execute_instruction(INSTRUCTION* instruction, float quantum
     response->response = EXEC_SUCCESS;
     response->completion_time = time(NULL);
 
-    
-    
-    
-    return ;
+
+    struct timespec ts;
+
+    ts.tv_sec = 0;
+    ts.tv_nsec = 1; // sleep one nano sec
+
+    nanosleep(&ts, NULL);
+
+    return response;
 }
 
 

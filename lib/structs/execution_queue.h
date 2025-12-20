@@ -6,8 +6,6 @@
 typedef enum {
 
     EXEC_SUCCESS,      // Instruction executed successfully
-    EXEC_TERMINATED,   // Process terminated
-    EXEC_QUANTUM_EXPIRED, // Time slice expired
     EXEC_ERROR         // General error
 
 } EXECUT_RESPONSE;
