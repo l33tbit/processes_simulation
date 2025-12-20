@@ -92,7 +92,7 @@ ORDONNANCEUR_STATISTICS* op_create_statistics() {
 }
 
 // ordonnanceur to simulator
-bool op_need_ressources(RESSOURCE_ELEMENT* ressource_needed) {
+bool op_need_ressources(EXECUTION_QUEUE* execution_queue, RESSOURCE_ELEMENT* ressource_needed) {
 
 }
 

@@ -12,6 +12,7 @@
 
 // requiring functions
 void op_start(SIMULATOR* self, char* path) {
+    
 
 }
 
@@ -37,7 +38,7 @@ RESSOURCE_MANAGER* op_start_ressource_manager() {
 }
 
 ORDONNANCEUR* op_start_schedular(Algorithms algorithm, int quantum, SIMULATOR* self) {
-
+    
 }
 
 

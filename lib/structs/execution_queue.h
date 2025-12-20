@@ -5,8 +5,6 @@
 
 typedef enum {
     EXEC_SUCCESS,      // Instruction executed successfully
-    EXEC_IO_REQUEST,   // Instruction needs I/O
-    EXEC_MEMORY_FAULT, // Memory access violation
     EXEC_TERMINATED,   // Process terminated
     EXEC_QUANTUM_EXPIRED, // Time slice expired
     EXEC_ERROR         // General error
@@ -18,8 +16,6 @@ typedef struct EXECUTION_RESULT {
     int cycles_taken;          // How many CPU cycles it took
     time_t completion_time;    // When it completed
 } EXECUTION_RESULT;
-
-
 
 typedef struct EXECUTION_QUEUE {
     int id; // l id du composant en train d'executer
