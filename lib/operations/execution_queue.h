@@ -3,7 +3,7 @@
 #include "structs/execution_queue.h"
 
 INSTRUCTION* op_next_instruction(PCB* pcb) {
-
+    
 }
 
 
