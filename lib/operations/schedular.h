@@ -9,7 +9,7 @@
 #include "structs/schedular.h"
 #include "structs/ressource.h"
 #include "structs/process.h"
-
+#include "structs/simulator.h"
 
 
 
@@ -129,4 +129,12 @@ EXECUTION_RESULT* op_execute_instruction(INSTRUCTION* instruction) {
 // update statistics
 bool op_update_schedular_statistics(ORDONNANCEUR_STATISTICS* schedular, float cpu_total_temps_usage, float cpu_temps_unoccupied, int context_switch, float total_temps_attente, float process_termine_count, float throughtput) { // must check nullty
 
+}
+
+bool op_check_instruction_disponibility(SIMULATOR* schedular, INSTRUCTION* instruction) {
+
+    bool result = schedular->check_instruction_disponibility(instruction);
+
+    return result;
+    
 }

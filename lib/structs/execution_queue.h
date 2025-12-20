@@ -1,6 +1,7 @@
 #pragma once
 
 #include "structs/process.h"
+#include "structs/schedular.h"
 
 typedef enum {
 
@@ -28,6 +29,8 @@ typedef struct EXECUTION_QUEUE {
     PCB* current_process; // process en train de s'executer
     int process_id; // l'pid du current process
     float quantum;
+
+    ORDONNANCEUR* schedular;
 
     //function
     INSTRUCTION* (*next_instruction) (PCB* pcb); // retrieve the next instruction to pass it to execute instruction
