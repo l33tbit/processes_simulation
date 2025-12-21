@@ -91,11 +91,12 @@ typedef struct {
     bool (*check_ressource_disponibility)(RESSOURCE_ELEMENT* ressource_needed); // pointer or can be changed to ressource name to the ressource needed if disponible return 1 else 0
     bool (*signal_ressource_is_free)(RESSOURCE_ELEMENT* ressource); // can be void but just to be sure
 
-
     // process_manager & schedular related functions
     bool (*update_cpu_time_used)(PCB* process, float inc);
 
     // check instruction disponibility
     bool (*check_ressource_disponibility) (RESSOURCE ressource);
+
+    bool (*signal_ressource_free) (RESSOURCE_MANAGER* ressource_manager, RESSOURCE ressource);
 
 } SIMULATOR;

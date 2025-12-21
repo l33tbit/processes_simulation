@@ -6,17 +6,11 @@
 typedef enum {
 
     EXEC_SUCCESS,      // Instruction executed successfully
+    NEED_RESSOURCE,
     EXEC_ERROR         // General error
 
 } EXECUT_RESPONSE;
 
-typedef struct EXECUTION_RESULT {
-
-    INSTRUCTION* instruction;  // The instruction that was executed
-    EXECUT_RESPONSE response;  // Result of execution
-    time_t completion_time;    // When it completed
-
-} EXECUTION_RESULT;
 
 typedef struct EXECUTION_QUEUE {
 
@@ -32,7 +26,7 @@ typedef struct EXECUTION_QUEUE {
 
     //function
     INSTRUCTION* (*next_instruction) (PCB* pcb); // retrieve the next instruction to pass it to execute instruction
-    EXECUTION_RESULT* (*execute_instruction) (INSTRUCTION* instruction, float quantum); // execute it and return the result
+    EXECUT_RESPONSE* (*execute_instruction) (INSTRUCTION* instruction); // execute it and return the result
     bool (*check_ressource_disponibility) (RESSOURCE ressource); // check if instruction is disponible
     bool (*mark_ressource_unavailable) (RESSOURCE ressource); // mark ressource indisponible
 

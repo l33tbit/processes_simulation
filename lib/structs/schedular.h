@@ -52,9 +52,9 @@ typedef struct ORDONNANCEUR {
     ORDONNANCEUR_STATISTICS* (*create_statistics)(void);
 
     // ordonnanceur to simulator (using bool for simplicity)
-    EXECUTION_RESULT* (*signal_execute_instruction) (PCB* pcb, float quantum); // tell the execution queue to execute an instruction
+    EXECUT_RESPONSE (*signal_execute_instruction) (ORDONNANCEUR* self, EXECUTION_QUEUE* execution_queue, INSTRUCTION* instruction); // tell the execution queue to execute an instruction
     bool (*need_ressources)(RESSOURCE_ELEMENT* ressource_needed); // return 1 if ressource is available marked unavailable
-    bool (*ressource_is_free)(RESSOURCE_ELEMENT* ressource); // return 1 if ressource succesfully free (for error handling)
+    bool (*ressource_is_free)(SIMULATOR* simulator, RESSOURCE ressource); // return 1 if ressource succesfully free (for error handling)
     bool (*update_cpu_time_used)(PCB* process, float inc); // shoudld declancher calcul remaining time inc the value to add to time, because can only increasing not decreasing
     bool (*update_process)(PCB* process, float temps_fin, float tournround, float temps_attente); // when updating temps fin mark process terminated
     bool (*ask_sort_rt)(); // ask simulator to tell process manager to sort by remaining time ; pour srtf

@@ -11,13 +11,6 @@
 
 #define ressource_number 6
 
-
-// typedef struct {
-//     char* ressource_name[10]; // nom de ressource
-//     RESSOURCE ressource; // type 
-//     bool disponibilite; // dispo ou non 1 / 0
-// } RESSOURCE_ELEMENT;
-
 // on start
 RESSOURCE_ELEMENT* op_create_ressource_list(void) {
     RESSOURCE_ELEMENT* ressources_head = NULL;

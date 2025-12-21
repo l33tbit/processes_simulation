@@ -47,8 +47,10 @@ bool op_check_ressource_disponibility(RESSOURCE_ELEMENT* ressource_needed) {
 
 }
 
-bool op_signal_ressource_is_free(RESSOURCE_ELEMENT* ressource) {
+bool op_signal_ressource_is_free(RESSOURCE_MANAGER* ressource_manager, RESSOURCE ressource) {
+    bool response = ressource_manager->mark_ressource_available(ressource);
 
+    return response;
 }
 
 // process_manager & schedular related functions
@@ -62,8 +64,13 @@ bool op_sched_check_instruction_disponibility(INSTRUCTION* instruction) {
 }
 
 bool op_simul_check_instruction_disponibility(RESSOURCE_MANAGER* ressource_manager, RESSOURCE ressource) {
-    
     bool result = ressource_manager->check_if_ressource_available(ressource);
-    return result;
 
+    return result;
+}
+
+bool signal_ressource_free(RESSOURCE_MANAGER* ressource_manager, RESSOURCE ressource) {
+    bool response = ressource_manager->mark_ressource_available(ressource);
+
+    return response;
 }
