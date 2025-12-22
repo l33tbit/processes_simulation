@@ -475,6 +475,8 @@ PCB* op_get_next_ready_element(PCB* current_pcb) {
     }
 
     PCB* next = current_pcb->pid_sibling_next;
+
+    return next;
 }
 
 

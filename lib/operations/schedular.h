@@ -36,15 +36,37 @@ bool op_ressource_is_free(SIMULATOR* simulator, RESSOURCE ressource) {
     return response;
 }
 
-bool op_update_cpu_time_used(PCB* process, float inc) {
+bool op_update_cpu_time_used(ORDONNANCEUR* self, float inc) {
+    // bool response = process->update_cpu_time_used(process, inc);
+    bool response = self->simulator->update_cpu_time_used(self->exec_proc, inc);
 
+
+    return response;
 }
 
-bool op_update_process(PCB* process, float temps_fin, float tournround, float temps_attente) {
+bool op_update_process(SIMULATOR* simulator,PCB* process, float *temps_fin, float *tournround, float *temps_attente) {
+    if (process == NULL) {
+        fprintf(stderr, "ERROR ON: op_update_process , process is NULL\n");
+        return false;
+    }
 
+    if (temps_fin) { // updating temp fin = update tournround
+
+    }    
+
+    if (tournround) {
+        process->statistics->tournround = *tournround;
+    }
+
+    if (temps_attente) {
+        process->statistics->temps_attente = *temps_attente;
+    }
+
+    return true;
 }
 
 bool op_ask_sort_rt(ORDONNANCEUR* schedular) {
+
     bool response = schedular->ask_sort_rt(schedular);
 
     return response;

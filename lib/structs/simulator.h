@@ -82,8 +82,8 @@ typedef struct {
 
     // functions
     // initialize the managers
-    PROCESS_MANAGER* (*start_process_manager)(FILE* buffer); // process manager need the csv buffer to create the process table
-    RESSOURCE_MANAGER* (*start_ressource_manager)(void); // passing void to non argument function is a common use :) // i think it needs nothing because all the ressource are defined in the enum and should only toggle the disponibility or availability 
+    PROCESS_MANAGER* (*start_process_manager)(SIMULATOR* self, FILE* buffer); // process manager need the csv buffer to create the process table
+    RESSOURCE_MANAGER* (*start_ressource_manager)(SIMULATOR* self); // passing void to non argument function is a common use :) // i think it needs nothing because all the ressource are defined in the enum and should only toggle the disponibility or availability 
     ORDONNANCEUR* (*start_schedular)(Algorithms algorithm, int quantum, SIMULATOR* self); // we should pass the simulator itself's pointer to the function 
 
     // process_manager & schedular related function
