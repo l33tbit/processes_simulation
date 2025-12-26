@@ -22,7 +22,7 @@ typedef struct PROCESS_MANAGER {
     struct PCB* (*create_process_table)(FILE* buffer); // need to be assigned to process_table field and update the process_count field// create a chaine circulaire ou non circular
     struct PCB* (*create_ready_queue)(PCB* process_table_head, bool circular); // size which is process count field)
     // READY_QUEUE_ELEMENT* (*create_ready_queue, PCB* pcb_head)(bool circular); // size which is process count field
-    struct PCB* (*create_blocked_queue)(void); // will initialize by size 0 i think
+    struct PCB* (*create_blocked_queue)(); // will initialize by size 0 i think
 
     // process table related  (when creating the pcb pcd_statistics should also be created)
     PCB* (*get_all_processus)(FILE* buffer); // should count while retrieving return struct that has first PCB* and size we'll get all process append them to a listn then assign pid,after that we ll push them into process list  *maybe*[ should check the ressources of each process compare to enumeration,]
@@ -49,7 +49,7 @@ typedef struct PROCESS_MANAGER {
     // assign function to the pcb
     PCB* (*assign_functions_to_pcb)(PCB* pcb);
 
-    struct PROCESS_MANAGER* (*init)(struct PROCESS_MANAGER* self, FILE* buffer, int algorithm);
+    bool (*init)(struct PROCESS_MANAGER* self, FILE* buffer, int algorithm);
 
     WORK_RETURN (*kill) (struct PROCESS_MANAGER* self);
 

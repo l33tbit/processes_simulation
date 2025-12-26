@@ -14,27 +14,11 @@ PCB* op_create_process_table(FILE* buffer) {
     // create process table
     // iterate and add to process table
 
-    // heap allocated buffer
-    size_t size = 10 * 1024 * 1024; // 10mbytes
+    PCB* pcb_head = extract_from_buffer(buffer);
 
-    char* buffera = (char*)malloc(size);
-
-    if (!buffera) {
-        fprintf(stderr, "ERROR ON: error while allocating the buffer before reading csv\n");
-        exit(1);
-    }
-
-    FILE* csv_buffer = fopen("/home/zeus/projects/processus_simulation/unit_testing/csv_testin_parocess_manager_parsing.csv", "r");
-
-    if (!csv_buffer) {
-        perror("ERROR ON: error while reading csv\n");
-        exit(1);
-    }
-
-    PCB* pcb_head = extract_from_buffer(csv_buffer);
-
-    while (pcb_head == NULL) {
+    if (pcb_head == NULL) {
         fprintf(stderr, "ERROR ON: extract_from_buffer failed has returned NULL in allocating pcb_head\n");
+        exit(1);
     }
 
     return pcb_head; 
@@ -42,7 +26,8 @@ PCB* op_create_process_table(FILE* buffer) {
 }
 
 
-PCB* op_create_ready_queue(bool circular, PCB* pcb) {  // we dont pass the algo because it initialized before the schedular
+PCB* op_create_ready_queue(PCB* pcb, bool circular) {  // we dont pass the algo because it initialized before the schedular
+    
     if (pcb == NULL) {
         fprintf(stderr, "ERROR ON: op_create_ready_queue failed has pcb is NULL\n");
         exit(1);
@@ -123,7 +108,8 @@ PCB* op_create_ready_queue(bool circular, PCB* pcb) {  // we dont pass the algo 
                 while (current->pid_sibling_next != NULL) {
                     current = current->pid_sibling_next;
                 }
-                current->pid_sibling_next = NULL;  // null in the end        }
+                current->pid_sibling_next = NULL;  // null in the end        
+            }
         } else {
             // make last node pointe to the head
             if (ready_queue_head != NULL) {
@@ -140,8 +126,7 @@ PCB* op_create_ready_queue(bool circular, PCB* pcb) {  // we dont pass the algo 
             }
         }
 
-        return ready_queue_head;
-    }
+    return ready_queue_head;
 }
 
 PCB* op_sort_ready_by_fc(PROCESS_MANAGER* process_manager, bool circular) {
@@ -293,7 +278,7 @@ PCB* op_sort_ready_by_burst(PROCESS_MANAGER* process_manager) {
     return sorted_head;
 }
 
-PCB* op_create_blocked_queue(PCB* blocked_queue_head) {
+PCB* op_create_blocked_queue() {
     // i think i just need to init it and when a process is blocked will be chained
     return NULL; // same a declaring pcb* pcb = null and return it
 }
@@ -442,6 +427,8 @@ PCB* op_delete_from_blocked_queue(PCB* blocked_queue_head, PCB* pcb) {
         prev = current;        
         current = current->pid_sibling_next;
     }
+
+    return blocked_queue_head;
 }
 
 PCB* op_get_blocked_queue_element(PCB* blocked_queue_head, PCB* pcb) {
@@ -510,19 +497,7 @@ bool op_free_process_list(PCB* process_table_head) {
 
 bool op_pro_init(PROCESS_MANAGER* self, FILE* buffer, int algorithm) {
 
-    self->processus_buffer = buffer;
-
-    PCB* process_table_head = self->create_process_table(self->processus_buffer); // return the first element in process table
-
-    PCB* ready_queue_head = self->create_ready_queue(process_table_head, (algorithm == 0 ? true : false)); // if it's rr then circular
-
-    PCB* blocked_queue_head = self->create_blocked_queue();
-
-    self->process_table_head = process_table_head;
-    self->ready_queue_head = ready_queue_head;
-    self->blocked_queue_head = blocked_queue_head;
-
-    
+    // --------- function assigning
     self->create_process_table = op_create_process_table;
     self->create_ready_queue = op_create_ready_queue;
     self->create_blocked_queue = op_create_blocked_queue;
@@ -531,6 +506,20 @@ bool op_pro_init(PROCESS_MANAGER* self, FILE* buffer, int algorithm) {
     self->add_process_to_blocked_queue = op_add_process_to_blocked_queue;
     self->free_process_table = op_free_process_list;
     self->update_process = op_pro_update_process;
+    
+    // --------------------------
+
+    printf("finished inside asigning function\n\n\n");
+
+    self->processus_buffer = buffer;
+
+    self->process_table_head = self->create_process_table(self->processus_buffer); // return the first element in process table
+
+    self->ready_queue_head = self->create_ready_queue(self->process_table_head, (algorithm == 0 ? true : false)); // if it's rr then circular
+
+    self->blocked_queue_head = self->create_blocked_queue();
+
+    printf("finished inside op_pro_init\n\n\n");
 
     return true;
 }

@@ -54,9 +54,9 @@ RESSOURCE_ELEMENT* op_create_ressource_list(void) {
 
 
 // ressources operations
-RESSOURCE_ELEMENT* op_look_for_ressource_in_list(RESSOURCE_ELEMENT* ressources_head, RESSOURCE ressource) {
+RESSOURCE_ELEMENT* op_look_for_ressource_in_list(RESSOURCE_MANAGER* self, RESSOURCE ressource) {
 
-    RESSOURCE_ELEMENT* head = ressources_head;
+    RESSOURCE_ELEMENT* head = self->ressources;
 
     while (head != NULL) {
         if (head->ressource == ressource) {
@@ -68,9 +68,9 @@ RESSOURCE_ELEMENT* op_look_for_ressource_in_list(RESSOURCE_ELEMENT* ressources_h
     return NULL;
 }
 
-bool op_mark_ressource_available(RESSOURCE_ELEMENT* ressources_head,RESSOURCE ressource) {
+bool op_mark_ressource_available(RESSOURCE_MANAGER* self, RESSOURCE ressource) {
 
-    RESSOURCE_ELEMENT* head = ressources_head;
+    RESSOURCE_ELEMENT* head = self->ressources;
 
     while (head != NULL) {
         if (head->ressource == ressource) { // if found
@@ -83,9 +83,9 @@ bool op_mark_ressource_available(RESSOURCE_ELEMENT* ressources_head,RESSOURCE re
     return false;
 }
 
-bool op_mark_ressource_unavailable(RESSOURCE_ELEMENT* ressources_head, RESSOURCE ressource) {
+bool op_mark_ressource_unavailable(RESSOURCE_MANAGER* self, RESSOURCE ressource) {
 
-    RESSOURCE_ELEMENT* head = ressources_head;
+    RESSOURCE_ELEMENT* head = self->ressources;
 
     while (head != NULL) {
         if (head->ressource == ressource) { // when found
@@ -98,9 +98,9 @@ bool op_mark_ressource_unavailable(RESSOURCE_ELEMENT* ressources_head, RESSOURCE
     return false;
 }
 
-bool op_check_if_ressource_available(RESSOURCE_ELEMENT* ressources_head, RESSOURCE ressource) {
+bool op_check_if_ressource_available(RESSOURCE_MANAGER* self, RESSOURCE ressource) {
     
-    RESSOURCE_ELEMENT* head = ressources_head;
+    RESSOURCE_ELEMENT* head = self->ressources;
 
     while (head != NULL) {
         if (head->ressource == ressource || head->disponibilite == true) { // when found
@@ -151,9 +151,9 @@ init_rm op_rm_init(RESSOURCE_MANAGER* self) {
     self->free_ressource_list = op_free_ressource_list;
     self->kill = op_rm_kill;
 
-    self->create_ressource_list = self->create_ressource_list(); // create the ressource list then assign it to the ressource head field in ressource manager
+    self->ressources = self->create_ressource_list(); // create the ressource list then assign it to the ressource head field in ressource manager
 
-    if (self->create_ressource_list == NULL) {
+    if (self->ressources == NULL) {
         return INIT_ERROR;
     }
 

@@ -21,10 +21,10 @@ typedef struct RESSOURCE_MANAGER {
     RESSOURCE_ELEMENT* (*create_ressource_list)(void);
 
     // ressources operations
-    RESSOURCE_ELEMENT* (*look_for_ressource_in_list)(RESSOURCE ressource);
-    bool (*mark_ressource_available)(RESSOURCE ressource);
-    bool (*mark_ressource_unavailable)(RESSOURCE ressource);
-    bool (*check_if_ressource_available)(RESSOURCE ressource); // if available return  if not return 0
+    RESSOURCE_ELEMENT* (*look_for_ressource_in_list)(struct RESSOURCE_MANAGER* self, RESSOURCE ressource);
+    bool (*mark_ressource_available)(struct RESSOURCE_MANAGER* self, RESSOURCE ressource);
+    bool (*mark_ressource_unavailable)(struct RESSOURCE_MANAGER* self, RESSOURCE ressource);
+    bool (*check_if_ressource_available)(struct RESSOURCE_MANAGER* self, RESSOURCE ressource); // if available return  if not return 0
     
     init_rm (*init)(struct RESSOURCE_MANAGER* self);
 

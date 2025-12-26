@@ -74,7 +74,7 @@ typedef struct ORDONNANCEUR {
 
     // functions
     // on start
-    OPTIONS (*init)(struct ORDONNANCEUR* self, struct SIMULATOR* simulator, OPTIONS option);
+    bool (*init)(struct ORDONNANCEUR* self, struct SIMULATOR* simulator, OPTIONS option);
 
     struct EXECUTION_QUEUE* (*create_execution_queue)(void);
     ORDONNANCEUR_STATISTICS* (*create_statistics)(void);
@@ -84,15 +84,15 @@ typedef struct ORDONNANCEUR {
     bool (*need_ressources)(RESSOURCE_ELEMENT* ressource_needed); // return 1 if ressource is available marked unavailable
     bool (*ressource_is_free)(struct SIMULATOR* simulator, RESSOURCE ressource); // return 1 if ressource succesfully free (for error handling)
     // bool (*update_cpu_time_used)(PCB* process, float inc); // shoudld declancher calcul remaining time inc the value to add to time, because can only increasing not decreasing
-    bool (*ask_sort_rt)(struct SIMULATOR* simulator); // ask simulator to tell process manager to sort by remaining time ; pour srtf
-    bool (*ask_sort_priority)(struct SIMULATOR* simulator); // ask simulator to tell process manager to sort by priority ; pour ppp
-    struct PCB* (*sched_ask_for_next_ready_element)(struct ORDONNANCEUR* self,struct PCB* current_pcb);
+    bool (*ask_sort_rt)(struct ORDONNANCEUR* self); // ask simulator to tell process manager to sort by remaining time ; pour srtf
+    bool (*ask_sort_priority)(struct ORDONNANCEUR* self); // ask simulator to tell process manager to sort by priority ; pour ppp
+    struct PCB* (*sched_ask_for_next_ready_element)(struct ORDONNANCEUR* self, struct PCB* current_pcb);
 
     // update statistics
     bool (*update_schedular_statistics) (struct ORDONNANCEUR* self, float* exec_time, float* burst, float* temp_attente, bool finished); // must check nullty
 
     // check instruction disponibility
-    bool (*check_ressource_disponibility) (RESSOURCE ressource);
+    bool (*check_ressource_disponibility) (struct ORDONNANCEUR* self, RESSOURCE ressource);
     
     
     process_update (*update_process)(struct ORDONNANCEUR* self, struct PCB* pcb, time_t* temps_fin, float* cpu_temps_used); // with nullty check; updating temps_fin = market_terminated = update_turnround ; updating cpu_temps_used = updating_remaining_time

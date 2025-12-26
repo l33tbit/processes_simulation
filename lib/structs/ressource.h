@@ -8,7 +8,7 @@ typedef enum {
 
 } RESSOURCE;
 
-typedef struct {
+typedef struct RESSOURCE_ELEMENT {
     
     char ressource_name[10]; // nom de ressource
     RESSOURCE ressource; // type 

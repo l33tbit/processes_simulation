@@ -46,8 +46,8 @@ bool op_need_ressources(ORDONNANCEUR* self, RESSOURCE_ELEMENT* ressource_needed)
     return response;
 }
 
-bool op_ressource_is_free(SIMULATOR* simulator, RESSOURCE ressource) {
-    bool response = simulator->signal_ressource_free(simulator->ressource_manager, ressource);
+bool op_ressource_is_free(ORDONNANCEUR* self, RESSOURCE ressource) {
+    bool response = self->simulator->signal_ressource_is_free(self->simulator, ressource);
 
     return response;
 }
@@ -88,9 +88,9 @@ PCB* op_sched_ask_for_next_ready_element(ORDONNANCEUR* self, PCB* current_pcb) {
 }
 
 
-bool op_check_ressource_disponibility(SIMULATOR* simulator, RESSOURCE ressource) {
+bool op_check_ressource_disponibility(ORDONNANCEUR* self, RESSOURCE ressource) {
 
-    bool result = simulator->check_ressource_disponibility(simulator->ressource_manager, ressource);
+    bool result = self->simulator->check_ressource_disponibility(self->simulator, ressource);
 
     return result;
 }
@@ -142,7 +142,7 @@ WORK_RETURN sched_kill(ORDONNANCEUR* self) {
 
 WORK_RETURN select_rr(ORDONNANCEUR* self, float quantum) {
 
-    printf('hiiiiiit select_rr\n\n\n');
+    printf("hiiiiiit select_rr\n\n\n");
 
     do {
     

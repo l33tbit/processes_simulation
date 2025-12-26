@@ -88,7 +88,7 @@ ORDONNANCEUR* op_start_schedular(Algorithms algorithm, int quantum, SIMULATOR* s
 
 
 bool op_signal_ressource_is_free(RESSOURCE_MANAGER* ressource_manager, RESSOURCE ressource) {
-    bool response = ressource_manager->mark_ressource_available(ressource);
+    bool response = ressource_manager->mark_ressource_available(ressource_manager, ressource);
 
     return response;
 }
@@ -97,14 +97,14 @@ bool op_sched_check_instruction_disponibility(INSTRUCTION* instruction) {
 
 }
 
-bool op_simul_check_instruction_disponibility(RESSOURCE_MANAGER* ressource_manager, RESSOURCE ressource) {
-    bool result = ressource_manager->check_if_ressource_available(ressource);
+bool op_simul_check_instruction_disponibility(SIMULATOR* self, RESSOURCE ressource) {
+    bool result = self->ressource_manager->check_if_ressource_available(self->ressource_manager, ressource);
 
     return result;
 }
 
 bool op_signal_ressource_free(RESSOURCE_MANAGER* ressource_manager, RESSOURCE ressource) {
-    bool response = ressource_manager->mark_ressource_available(ressource);
+    bool response = ressource_manager->mark_ressource_available(ressource_manager, ressource);
 
     return response;
 }
@@ -188,7 +188,7 @@ OPTIONS op_ask_for_options() {
 
 
 
-PROCESS_MANAGER* create_process_manager() {
+PROCESS_MANAGER* op_create_process_manager() {
     
     PROCESS_MANAGER* process_manager = (PROCESS_MANAGER*)malloc(sizeof(PROCESS_MANAGER)); // allocate process manager
     
@@ -234,11 +234,11 @@ WORK_RETURN op_simul_init(SIMULATOR* self, FILE* buffer) {
 
     self->run = op_run;
     self->update_process = op_sched_update_process;
-    self->check_ressource_disponibility = op_check_ressource_disponibility;
+    self->check_ressource_disponibility = op_simul_check_instruction_disponibility;
     self->signal_ressource_is_free = op_signal_ressource_is_free;
     self->stop = op_simul_stop;
     self->ask_for_options = op_ask_for_options;
-    self->create_process_manager = create_process_manager;
+    self->create_process_manager = op_create_process_manager;
     self->create_schedular = op_create_schedular;
     self->create_ressource_manager = op_create_ressource_manager;
 
@@ -253,6 +253,8 @@ WORK_RETURN op_simul_init(SIMULATOR* self, FILE* buffer) {
     self->process_manager = self->create_process_manager(); // create process manager
 
     self->process_manager->init = op_pro_init; // assign the initializer function
+
+    printf("finished process_manager init\n\n\n");
 
     self->process_manager->init(self->process_manager, buffer, options.algorithm);
 
@@ -278,5 +280,3 @@ WORK_RETURN op_simul_init(SIMULATOR* self, FILE* buffer) {
 
     return WORK_DONE;
 }
-
-

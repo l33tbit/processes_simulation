@@ -25,7 +25,7 @@ typedef struct SIMULATOR {
     // functions
     // requiring functions
     struct SIMULATOR* (*start)(struct SIMULATOR* self, char* path); // so void is the return type, (*start) is the function pointer [we need to create or define the function outside then assign the fucntion created to that pointer], then after the arguments
-    void (*stop)(struct SIMULATOR* self); // same thing here
+    WORK_RETURN (*stop)(struct SIMULATOR* self); // same thing here
     struct SIMULATOR* (*run_simulator)(struct SIMULATOR* self, char* path); // same
     FILE* (*load_processus)(char* file_name); // will read a file so it's return type is FILE*
 
@@ -36,15 +36,13 @@ typedef struct SIMULATOR {
     ORDONNANCEUR* (*start_schedular)(Algorithms algorithm, int quantum, struct SIMULATOR* self); // we should pass the simulator itself's pointer to the function 
 
     // process_manager & schedular related function
-    bool (*signal_ressource_is_free)(RESSOURCE_ELEMENT* ressource); // can be void but just to be sure
+    bool (*signal_ressource_is_free)(struct SIMULATOR* self, RESSOURCE ressource); // can be void but just to be sure
 
     // process_manager & schedular related functions
     bool (*update_cpu_time_used)(PCB* process, float inc);
 
     // check instruction disponibility
-    bool (*check_ressource_disponibility)(struct SIMULATOR* simulator, RESSOURCE ressource); // pointer or can be changed to ressource name to the ressource needed if disponible return 1 else 0
-
-    bool (*signal_ressource_free) (RESSOURCE_MANAGER* ressource_manager, RESSOURCE ressource);
+    bool (*check_ressource_disponibility)(struct SIMULATOR* self, RESSOURCE ressource); // pointer or can be changed to ressource name to the ressource needed if disponible return 1 else 0
 
     PCB* (*simul_ask_for_next_ready_element) (struct SIMULATOR* self, PCB* current_pcb);
 
