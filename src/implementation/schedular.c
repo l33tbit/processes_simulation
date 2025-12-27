@@ -150,33 +150,30 @@ WORK_RETURN sched_kill(ORDONNANCEUR* self) {
 
 WORK_RETURN select_rr(ORDONNANCEUR* self, float quantum) {
 
-    printf("hiiiiiit select_rr\n\n\n");
-
     do {
     
         self->exec_proc = self->sched_ask_for_next_ready_element(self, self->exec_proc); // get the next element
 
-
         print_pcb(self->exec_proc);
-
 
         if (self->execution_queue->execute_rr((self->exec_proc->remaining_time < quantum) ? self->exec_proc->remaining_time : quantum) != WORK_DONE) { // if remaining time is less than the quantum then execute for remaining time not quantum else execute for quantum
             return WORK_ERROR;
         }
 
         time_t daba;
-
         time_t* temps_fin_ptr = NULL;
-
+        float time_used; // Variable to track actual time used
 
         if (self->exec_proc->remaining_time < quantum) {
 
             float n_quantum = self->exec_proc->remaining_time;
+            time_used = n_quantum; // Use the actual remaining time
             
             time(&daba);
             temps_fin_ptr = &daba;
 
-            process_update update = self->update_process(self, self->exec_proc, temps_fin_ptr, &quantum);
+            // Pass n_quantum instead of quantum
+            process_update update = self->update_process(self, self->exec_proc, temps_fin_ptr, &n_quantum);
             
             if (update != UPDATED) {
                 return UPDATE_ERROR;
@@ -190,6 +187,8 @@ WORK_RETURN select_rr(ORDONNANCEUR* self, float quantum) {
             
         } else {
 
+            time_used = quantum; // Use the full quantum
+            
             process_update update = self->update_process(self, self->exec_proc, temps_fin_ptr, &quantum);
 
             if (update != UPDATED) {
@@ -208,9 +207,9 @@ WORK_RETURN select_rr(ORDONNANCEUR* self, float quantum) {
 
     printf("all processes are terminated\n");
 
-
     return WORK_DONE;
 }
+
 
 ORDONNANCEUR* op_sched_init(ORDONNANCEUR* self, SIMULATOR* simulator, OPTIONS* options) {
 

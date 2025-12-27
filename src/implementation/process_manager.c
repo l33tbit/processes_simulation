@@ -303,15 +303,16 @@ process_update op_pro_update_process(PROCESS_MANAGER* self, PCB* pcb, time_t *te
         pcb->statistics->temps_attente = pcb->statistics->tournround - pcb->burst_time;
         pcb->etat = TERMINATED;
 
-        self->delete_from_ready_queue(self->ready_queue_head, pcb); // delete the process from ready queue when terminated
+        self->ready_queue_head = self->delete_from_ready_queue(self->ready_queue_head, pcb); // delete the process from ready queue when terminated and the function return the head of the tready queue so capturing it and assigning it to ready_queue_head
 
     }
     
     if (cpu_temps_used) {
+
         pcb->cpu_time_used += *cpu_temps_used; // because initialized to 0
         pcb->remaining_time = pcb->burst_time - pcb->cpu_time_used;
-    }
     
+    }
 
     return UPDATED;
 }
@@ -362,7 +363,17 @@ PCB* op_delete_from_ready_queue(PCB* ready_queue_head, PCB* pcb) {// the chaine 
     // if the head that need to be deleted
     if (ready_queue_head == pcb) {
         PCB* hold = ready_queue_head->pid_sibling_next;
-        free(ready_queue_head);
+        
+        // Free instructions list first
+        INSTRUCTION* current = pcb->instructions_head;
+        INSTRUCTION* next;
+        while (current != NULL) {
+            next = current->next;  // Assuming INSTRUCTION has a 'next' field
+            free(current);
+            current = next;
+        }
+        
+        free(pcb);
         return hold;
     }
 
@@ -372,6 +383,15 @@ PCB* op_delete_from_ready_queue(PCB* ready_queue_head, PCB* pcb) {// the chaine 
 
     while (current != NULL) {
         if (current == pcb) { // found
+            // free the instructions list 
+            INSTRUCTION* instr_current = pcb->instructions_head;
+            INSTRUCTION* instr_next;
+            while (instr_current != NULL) {
+                instr_next = instr_current->next;  // Assuming INSTRUCTION has a 'next' field
+                free(instr_current);
+                instr_current = instr_next;
+            }
+            
             // jump it and free it
             prcd->pid_sibling_next = current->pid_sibling_next;
             free(current);
