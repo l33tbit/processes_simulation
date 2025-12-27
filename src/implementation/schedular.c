@@ -209,7 +209,7 @@ WORK_RETURN select_rr(ORDONNANCEUR* self, float quantum) {
     return WORK_DONE;
 }
 
-ORDONNANCEUR* op_sched_init(ORDONNANCEUR* self, SIMULATOR* simulator, OPTIONS options) {
+ORDONNANCEUR* op_sched_init(ORDONNANCEUR* self, SIMULATOR* simulator, OPTIONS* options) {
 
     // function assigning
     self->create_execution_queue = op_create_execution_queue;
@@ -224,7 +224,7 @@ ORDONNANCEUR* op_sched_init(ORDONNANCEUR* self, SIMULATOR* simulator, OPTIONS op
     self->update_process = op_update_process;
     self->kill = sched_kill;
     
-    switch (options.algorithm) {
+    switch (options->algorithm) {
         case 0:
             self->select = select_rr;
             break;
@@ -233,9 +233,9 @@ ORDONNANCEUR* op_sched_init(ORDONNANCEUR* self, SIMULATOR* simulator, OPTIONS op
 
     self->simulator = simulator;
 
-    self->algorithm = options.algorithm;
+    self->algorithm = options->algorithm;
 
-    self->quantum = options.quantum;
+    self->quantum = options->quantum;
 
     self->statistics = self->create_statistics(); // create statistics and assign it 
 

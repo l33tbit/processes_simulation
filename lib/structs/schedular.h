@@ -74,7 +74,7 @@ typedef struct ORDONNANCEUR {
 
     // functions
     // on start
-    bool (*init)(struct ORDONNANCEUR* self, struct SIMULATOR* simulator, OPTIONS option);
+    bool (*init)(struct ORDONNANCEUR* self, struct SIMULATOR* simulator, OPTIONS* option);
 
     struct EXECUTION_QUEUE* (*create_execution_queue)(void);
     ORDONNANCEUR_STATISTICS* (*create_statistics)(void);

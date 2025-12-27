@@ -15,6 +15,8 @@ typedef struct SIMULATOR {
     PROCESS_MANAGER* process_manager; // pointeur to process manaer
     RESSOURCE_MANAGER* ressource_manager; // pointeur vers ressource
     struct SIMULATOR* simulator;
+
+    OPTIONS* options;
     
     int simulation_time;
     bool runing;
@@ -56,9 +58,9 @@ typedef struct SIMULATOR {
 
     WORK_RETURN (*init) (struct SIMULATOR* simulator, FILE* buffer);
 
-    OPTIONS (*ask_for_options)(void);
+    OPTIONS* (*ask_for_options)(void);
 
-    WORK_RETURN (*run)(struct SIMULATOR* self,OPTIONS options); // will be pointing on one of 5 functions depens on the algorithm
+    WORK_RETURN (*work)(struct SIMULATOR* self,OPTIONS* options); // will be pointing on one of 5 functions depens on the algorithm
 
     process_update (*update_process)(struct SIMULATOR* self, PCB* pcb, time_t* temps_fin, float* cpu_temps_used); // with nullty check; updating temps_fin = market_terminated = update_turnround ; updating cpu_temps_used = updating_remaining_time    
 

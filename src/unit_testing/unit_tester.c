@@ -371,7 +371,7 @@ void test_ressource_manager_initialization() {
 }
 
 
-// initialization is tested and work weally fine
+// initialization and kill are tested and work weally fine
 void test_simulator_initialization() { 
 
    SIMULATOR* simulator = (SIMULATOR*)malloc(sizeof(SIMULATOR));
@@ -397,6 +397,38 @@ void test_simulator_initialization() {
     if (simulator->ressource_manager && simulator->ressource_manager->ressources) {
         print_ressources_list(simulator->ressource_manager);
     }
+
+    simulator->stop(simulator);
+
+    fclose(buffer);
+
+    return 0;
+}
+
+
+// testing work
+void test_simulator_work() { 
+
+   SIMULATOR* simulator = (SIMULATOR*)malloc(sizeof(SIMULATOR));
+
+    
+    printf("hit main\n\n\n");
+
+    FILE* buffer = fopen("/home/zeus/projects/processus_simulation/src/unit_testing/data_testing.csv", "r");
+    if (buffer == NULL) {
+        perror("ERROR: Failed to open data.csv");
+        exit(1);
+    }
+
+    simulator->init = op_simul_init;
+
+
+    simulator->init(simulator, buffer);
+
+    printf("hit print_pcb_chaine\n\n\n");
+    fflush(stdout);
+
+    simulator->work(simulator, simulator->options);
 
     simulator->stop(simulator);
 

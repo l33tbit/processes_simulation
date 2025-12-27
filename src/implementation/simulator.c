@@ -127,13 +127,6 @@ bool op_simul_ask_sort_priority(SIMULATOR* simulator) {
     return response;
 }
 
-WORK_RETURN op_run(SIMULATOR* self, OPTIONS options) {
-
-    self->schedular->select(self->schedular, self->schedular->quantum);
-
-    return WORK_DONE;
-}
-
 process_update op_sched_update_process(SIMULATOR* self, PCB* pcb, time_t* temps_fin, float* cpu_temps_used) { // with nullty check; updating temps_fin = market_terminated = update_turnround ; updating cpu_temps_used = updating_remaining_time
 
     return self->process_manager->update_process(self->process_manager, pcb, temps_fin, cpu_temps_used);
@@ -158,7 +151,7 @@ WORK_RETURN op_simul_stop(SIMULATOR* self) {
 // ------------------------helpers
 
 
-OPTIONS op_ask_for_options() {
+OPTIONS* op_ask_for_options() {
     int algorithm;
     float quantum;
 
@@ -178,11 +171,17 @@ OPTIONS op_ask_for_options() {
 
     } while (algorithm != 0 && algorithm != 1 && algorithm != 2 && algorithm != 3 && algorithm != 4);
 
-    OPTIONS return_value;
-    return_value.algorithm = algorithm;
-    return_value.quantum = quantum;
+    OPTIONS* options = (OPTIONS*)malloc(sizeof(OPTIONS));
     
-    return return_value;
+    if (options == NULL) {
+        fprintf(stderr, "ERROR ON: op_ask_for_options , options allocation returned NULL\n");
+        exit(1);
+    }
+
+    options->algorithm = algorithm;
+    options->quantum = quantum;
+    
+    return options;
 }
 
 
@@ -229,6 +228,15 @@ RESSOURCE_MANAGER* op_create_ressource_manager() {
 
 
 
+
+WORK_RETURN op_simul_work(SIMULATOR* self, OPTIONS* options) {
+
+    self->schedular->select(self->schedular, self->schedular->quantum);
+
+    return WORK_DONE;
+}
+
+
 WORK_RETURN op_simul_init(SIMULATOR* self, FILE* buffer) {
 
     if (buffer == NULL) {
@@ -238,7 +246,7 @@ WORK_RETURN op_simul_init(SIMULATOR* self, FILE* buffer) {
 
     // ------- simulator
 
-    self->run = op_run;
+    self->work = op_simul_work;
     self->update_process = op_sched_update_process;
     self->check_ressource_disponibility = op_simul_check_instruction_disponibility;
     self->signal_ressource_is_free = op_signal_ressource_is_free;
@@ -251,13 +259,13 @@ WORK_RETURN op_simul_init(SIMULATOR* self, FILE* buffer) {
     
     // ---------- process manager
 
-    OPTIONS options = self->ask_for_options();
+    self->options = self->ask_for_options();
     
     self->process_manager = self->create_process_manager(); // create process manager
 
     self->process_manager->init = op_pro_init; // assign the initializer function
     
-    self->process_manager->init(self->process_manager, buffer, options.algorithm);
+    self->process_manager->init(self->process_manager, buffer, self->options->algorithm);
     
     
     // ---------- ressource list
@@ -271,12 +279,13 @@ WORK_RETURN op_simul_init(SIMULATOR* self, FILE* buffer) {
 
     // ---------- schedular
 
-    self->schedular = self->create_schedular(options.algorithm, options.quantum); // create schedular    
+    self->schedular = self->create_schedular(self->options->algorithm, self->options->quantum); // create schedular    
 
     self->schedular->init = op_sched_init; // assign the initialization function to schedular
 
-    self->schedular->init(self->schedular, self, options); // then init it
+    self->schedular->init(self->schedular, self, self->options); // then init it
 
 
     return WORK_DONE;
 }
+
