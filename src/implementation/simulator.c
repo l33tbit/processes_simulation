@@ -110,7 +110,7 @@ bool op_signal_ressource_free(RESSOURCE_MANAGER* ressource_manager, RESSOURCE re
 }
 
 PCB* op_simul_ask_for_next_ready_element(SIMULATOR* simulator, PCB* process) {
-    PCB* response = simulator->process_manager->get_next_ready_element(process);
+    PCB* response = simulator->process_manager->get_next_ready_element(simulator->process_manager, process);
 
     return response;
 }
@@ -255,6 +255,7 @@ WORK_RETURN op_simul_init(SIMULATOR* self, FILE* buffer) {
     self->create_process_manager = op_create_process_manager;
     self->create_schedular = op_create_schedular;
     self->create_ressource_manager = op_create_ressource_manager;
+    self->simul_ask_for_next_ready_element = op_simul_ask_for_next_ready_element;
 
     
     // ---------- process manager

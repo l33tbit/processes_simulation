@@ -1,4 +1,4 @@
-
+#pragma once
 // #include <assert.h>
 // #include <stdio.h>
 // #include <stdlib.h>
@@ -425,7 +425,6 @@ void test_simulator_work() {
 
     simulator->init(simulator, buffer);
 
-    printf("hit print_pcb_chaine\n\n\n");
     fflush(stdout);
 
     simulator->work(simulator, simulator->options);
@@ -464,7 +463,7 @@ int main() {
 
     // test_runing();
 
-    test_simulator_initialization();
+    test_simulator_work();
 
     // testing_parser();
 

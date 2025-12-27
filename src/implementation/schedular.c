@@ -146,7 +146,7 @@ WORK_RETURN sched_kill(ORDONNANCEUR* self) {
     return WORK_DONE;
 }
 
-
+#include "../../src/unit_testing/unit_tester.c"
 
 WORK_RETURN select_rr(ORDONNANCEUR* self, float quantum) {
 
@@ -155,6 +155,10 @@ WORK_RETURN select_rr(ORDONNANCEUR* self, float quantum) {
     do {
     
         self->exec_proc = self->sched_ask_for_next_ready_element(self, self->exec_proc); // get the next element
+
+
+        print_pcb(self->exec_proc);
+
 
         if (self->execution_queue->execute_rr((self->exec_proc->remaining_time < quantum) ? self->exec_proc->remaining_time : quantum) != WORK_DONE) { // if remaining time is less than the quantum then execute for remaining time not quantum else execute for quantum
             return WORK_ERROR;
@@ -183,7 +187,6 @@ WORK_RETURN select_rr(ORDONNANCEUR* self, float quantum) {
             ) {
                 return UPDATE_ERROR;
             }
-
             
         } else {
 

@@ -298,8 +298,8 @@ process_update op_pro_update_process(PROCESS_MANAGER* self, PCB* pcb, time_t *te
     // updating the given fields
     if (temps_fin) { // updating temp fin = update tournround
 
-        pcb->statistics->temps_fin = *temps_fin;
-        pcb->statistics->tournround = *temps_fin - pcb->statistics->temps_arrive;
+        pcb->statistics->temps_fin = (float)*temps_fin;
+        pcb->statistics->tournround = (float)*temps_fin - pcb->statistics->temps_arrive;
         pcb->statistics->temps_attente = pcb->statistics->tournround - pcb->burst_time;
         pcb->etat = TERMINATED;
 
@@ -309,8 +309,8 @@ process_update op_pro_update_process(PROCESS_MANAGER* self, PCB* pcb, time_t *te
     
     if (cpu_temps_used) {
         pcb->cpu_time_used += *cpu_temps_used; // because initialized to 0
+        pcb->remaining_time = pcb->burst_time - pcb->cpu_time_used;
     }
-    
     
 
     return UPDATED;
@@ -442,7 +442,6 @@ PCB* op_get_blocked_queue_element(PCB* blocked_queue_head, PCB* pcb) {
     PCB* got = NULL;
     PCB* iter = blocked_queue_head;
 
-
     // if element is in the start
     if (iter == pcb) {
         return iter;
@@ -459,10 +458,10 @@ PCB* op_get_blocked_queue_element(PCB* blocked_queue_head, PCB* pcb) {
     return NULL;
 }
 
-PCB* op_get_next_ready_element(PCB* current_pcb) {
- 
+PCB* op_get_next_ready_element(PROCESS_MANAGER* self, PCB* current_pcb) {
+
     if (current_pcb == NULL) {
-        return NULL;
+        return self->ready_queue_head;
     }
 
     PCB* next = current_pcb->pid_sibling_next;
@@ -517,6 +516,8 @@ bool op_pro_init(PROCESS_MANAGER* self, FILE* buffer, int algorithm) {
     self->get_next_ready_element = op_get_next_ready_element;
     self->get_blocked_queue_element = op_get_blocked_queue_element;
     self->delete_from_blocked_queue = op_delete_from_blocked_queue;
+    self->delete_from_ready_queue = op_delete_from_ready_queue;
+    
     // self->sort_ready_by_fc = op_sort_ready_by_fc;
     // self->sort_ready_by_rt = op_sort_ready_by_rt;
     // self->sort_ready_by_priority = op_sort_ready_by_priority;

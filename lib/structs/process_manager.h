@@ -39,7 +39,7 @@ typedef struct PROCESS_MANAGER {
     struct PCB* (*push_to_ready_queue)(struct PCB* ready_queue_head, struct PCB* pcb); // LIST CREATED NEED TO BEE FREE AFRTER ASSIGNING IT TO the proces_manager ready queue
     struct PCB* (*delete_from_ready_queue)(struct PCB* ready_queue_head, PCB* pcb); // the chaine node should be freed
     struct PCB* (*move_process_to_ready)(struct PCB* ready_queue_head, PCB* pcb);
-    struct PCB* (*get_next_ready_element) (PCB* current_pcb);
+    struct PCB* (*get_next_ready_element) (struct PROCESS_MANAGER* self, PCB* current_pcb);
 
     // bloqued queue related
     struct PCB* (*add_process_to_blocked_queue)(struct PCB* blocked_queue_head, PCB* pcb); // should covert pcb to BLOCKED_QUEUE_ELEMENT then push it
