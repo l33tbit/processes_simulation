@@ -113,7 +113,7 @@ bool op_update_schedular_statistics(ORDONNANCEUR* self, float* exec_time, float*
             self->statistics->cpu_total_temps_usage += *exec_time;
             self->statistics->total_turnround += *burst;
             self->statistics->troughtput = (float)self->statistics->processus_termine_count / self->statistics->total_turnround;
-            self->statistics->total_temps_attente += self->exec_proc->statistics->temps_attente;
+            self->statistics->total_temps_attente += *temp_attente;
 
     } else {
 

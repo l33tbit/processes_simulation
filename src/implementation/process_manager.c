@@ -295,6 +295,14 @@ process_update op_pro_update_process(PROCESS_MANAGER* self, PCB* pcb, time_t *te
         return UPDATE_ERROR;
     }
 
+    if (cpu_temps_used) {
+
+        pcb->cpu_time_used += *cpu_temps_used; // because initialized to 0
+        pcb->remaining_time = pcb->burst_time - pcb->cpu_time_used;
+        
+        if (pcb->remaining_time < 0.00001f) pcb->remaining_time = 0.0f;
+    }
+    
     // updating the given fields
     if (temps_fin) { // updating temp fin = update tournround
 
@@ -305,13 +313,6 @@ process_update op_pro_update_process(PROCESS_MANAGER* self, PCB* pcb, time_t *te
 
         self->ready_queue_head = self->delete_from_ready_queue(self->ready_queue_head, pcb); // delete the process from ready queue when terminated and the function return the head of the tready queue so capturing it and assigning it to ready_queue_head
 
-    }
-    
-    if (cpu_temps_used) {
-
-        pcb->cpu_time_used += *cpu_temps_used; // because initialized to 0
-        pcb->remaining_time = pcb->burst_time - pcb->cpu_time_used;
-    
     }
 
     return UPDATED;

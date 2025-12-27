@@ -423,7 +423,6 @@ void test_simulator_work() {
 
     simulator->init = op_simul_init;
 
-
     simulator->init(simulator, buffer);
 
     fflush(stdout);
