@@ -129,7 +129,6 @@ PCB* op_simul_ask_for_next_ready_element(SIMULATOR* self, PCB* process) {
 }
 
 bool op_simul_ask_sort_rt(SIMULATOR* self) {
-    
     self->process_manager->ready_queue_head = self->process_manager->sort_by_rt(self->process_manager);
 
     return true;
@@ -243,7 +242,6 @@ RESSOURCE_MANAGER* op_create_ressource_manager() {
 bool op_simul_update_ready_queue(SIMULATOR* self, bool circular) {
     
     printf("trying updaaaaaaaation");
-
 
     bool result = self->process_manager->update_read_queue(self->process_manager, circular);
 

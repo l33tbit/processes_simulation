@@ -10,11 +10,27 @@ WORK_RETURN op_execute_rr(float quantum) {
     return WORK_DONE;
 }
 
+// WORK_RETURN op_execute_srtf(float quantum) {
+//     printf("executing");
+    
+//     sleep(quantum);
+
+//     printf("done");
+
+//     return WORK_DONE;
+// }
+
 WORK_RETURN op_execute_srtf(float quantum) {
+    printf("=== op_execute_srtf CALLED with quantum=%f ===\n", quantum);
+    fflush(stdout);  // Force output
     sleep(quantum);
+    
+    // Don't sleep for now - just return immediately
+    printf("=== op_execute_srtf RETURNING WORK_DONE ===\n");
+    fflush(stdout);
+    
     return WORK_DONE;
 }
-
 
 WORK_RETURN op_ex_kill(EXECUTION_QUEUE* self) {
     
