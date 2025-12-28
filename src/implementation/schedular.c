@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <unistd.h>
+#include <math.h>  // Add this at the top of your file
 
 #include "../../lib/structs/execution_queue.h"
 #include "../../lib/structs/schedular.h"
@@ -226,9 +227,6 @@ WORK_RETURN select_rr(ORDONNANCEUR* self, float quantum) {
 
         if (self->exec_proc  != NULL) {
 
-            // print_pcb(self->exec_proc);
-
-
             // check ressources
             switch (self->check_ressources(self, self->exec_proc)) {
                 case PROCESS_BLOCKED:
@@ -301,6 +299,8 @@ WORK_RETURN select_rr(ORDONNANCEUR* self, float quantum) {
 
             proc_temps = (float)(int)temps;
 
+            printf("ppppppppppppp %d", proc_temps);
+
             if (self->sched_update_process_manager(self, proc_temps) == false) {
 
                 fprintf(stderr, "ERROR ON: sched_update_process_manager failed\n");
@@ -319,7 +319,6 @@ WORK_RETURN select_rr(ORDONNANCEUR* self, float quantum) {
         }
 
     } while (self->exec_proc != NULL);
-
 
     if (temps >= max_arrival_time) {
         printf("Scheduler terminated: All processes completed\n");
