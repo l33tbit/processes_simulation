@@ -37,4 +37,6 @@ typedef struct EXECUTION_QUEUE {
 
     WORK_RETURN (*kill)(struct EXECUTION_QUEUE* self);
 
+    WORK_RETURN (*execute_srtf) (float quantum);
+
 } EXECUTION_QUEUE;

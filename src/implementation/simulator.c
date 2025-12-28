@@ -165,8 +165,8 @@ WORK_RETURN op_simul_stop(SIMULATOR* self) {
 
 
 OPTIONS* op_ask_for_options() {
-    int algorithm;
-    float quantum;
+    int algorithm = -1; // init to -1, for validatoion and force user to choose
+    float quantum = -1; // init to -1, if not rr prevent random value
 
     do {
         printf("Hello\n\twhich algorithm you wish to run :\n");

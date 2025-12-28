@@ -5,13 +5,18 @@
 #include "../../lib/structs/process.h"
 
 
-WORK_RETURN execute_rr(float quantum) {
+WORK_RETURN op_execute_rr(float quantum) {
+    sleep(quantum);
+    return WORK_DONE;
+}
+
+WORK_RETURN op_execute_srtf(float quantum) {
     sleep(quantum);
     return WORK_DONE;
 }
 
 
-WORK_RETURN ex_kill(EXECUTION_QUEUE* self) {
+WORK_RETURN op_ex_kill(EXECUTION_QUEUE* self) {
     
     free(self);
 
@@ -22,8 +27,10 @@ WORK_RETURN ex_kill(EXECUTION_QUEUE* self) {
 
 bool ex_init(EXECUTION_QUEUE* self) {
 
-    self->execute_rr = execute_rr;
-    self->kill = ex_kill;
+    self->execute_rr = op_execute_rr;
+    self->kill = op_ex_kill;
+    self->execute_srtf = op_execute_srtf;
+
 
     return true;
 }
