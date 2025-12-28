@@ -212,9 +212,9 @@ PCB* op_sort_ready_by_fc(PROCESS_MANAGER* process_manager, bool circular) {
     return sorted_head;
 }
 
-PCB* op_sort_ready_by_rt(PROCESS_MANAGER* process_manager) { // copy past and change condition and error output
+PCB* op_sort_ready_by_rt(PROCESS_MANAGER* self) { // copy past and change condition and error output
 
-    PCB* ready_queue_head = process_manager->ready_queue_head;
+    PCB* ready_queue_head = self->ready_queue_head;
 
     if (ready_queue_head == NULL) {
         fprintf(stderr, "ERROR ON: op_sort_ready_by_rt , ready_queue_head is NULL\n");
@@ -557,56 +557,171 @@ process_update op_pro_update_process(PROCESS_MANAGER* self, PCB* pcb, time_t *te
 //     return ready_queue_head;
 // }
 
+// PCB* op_push_to_ready_queue(PROCESS_MANAGER* self, PCB* pcb, bool circular) {
+//     PCB* ready_queue_head = self->get_ready_queue_head(self);
+    
+//     if (pcb == NULL) {
+//         return ready_queue_head;
+//     }
+    
+//     printf("Pushing PCB %d to ready queue\n", pcb->pid);
+    
+//     // Create a COPY of the PCB for the ready queue
+//     PCB* ready_pcb = (PCB*)malloc(sizeof(PCB));
+//     if (!ready_pcb) {
+//         printf("ERROR: Failed to allocate PCB copy\n");
+//         return ready_queue_head;
+//     }
+    
+//     // Copy all fields
+//     memcpy(ready_pcb, pcb, sizeof(PCB));
+    
+//     // Set a unique PID or mark as copy
+//     ready_pcb->pid = pcb->pid;  // Same PID or add 1000 to differentiate
+    
+//     // Now we can safely modify ready_pcb's next pointer
+//     ready_pcb->pid_sibling_next = NULL;
+    
+//     if (ready_queue_head == NULL) {
+//         if (circular) {
+//             ready_pcb->pid_sibling_next = ready_pcb;
+//         }
+//         return ready_pcb;
+//     }
+    
+//     // Insert at end
+//     PCB* last = ready_queue_head;
+    
+//     if (circular) {
+//         while (last->pid_sibling_next != ready_queue_head) {
+//             last = last->pid_sibling_next;
+//         }
+//         last->pid_sibling_next = ready_pcb;
+//         ready_pcb->pid_sibling_next = ready_queue_head;
+//     } else {
+//         while (last->pid_sibling_next != NULL) {
+//             last = last->pid_sibling_next;
+//         }
+//         last->pid_sibling_next = ready_pcb;
+//     }
+    
+//     return ready_queue_head;
+// }
+
 PCB* op_push_to_ready_queue(PROCESS_MANAGER* self, PCB* pcb, bool circular) {
-    PCB* ready_queue_head = self->get_ready_queue_head(self);
+    printf("---Pushing PCB %d to ready queue (circular=%d)\n", pcb->pid, circular);
     
     if (pcb == NULL) {
-        return ready_queue_head;
+        return self->ready_queue_head;
     }
     
-    printf("Pushing PCB %d to ready queue\n", pcb->pid);
+    // DON'T create a copy! Use the original PCB
+    // Just set its next pointer appropriately
     
-    // Create a COPY of the PCB for the ready queue
-    PCB* ready_pcb = (PCB*)malloc(sizeof(PCB));
-    if (!ready_pcb) {
-        printf("ERROR: Failed to allocate PCB copy\n");
-        return ready_queue_head;
-    }
+    PCB* new_pcb = pcb;  // Use original
     
-    // Copy all fields
-    memcpy(ready_pcb, pcb, sizeof(PCB));
+    // Store the original next pointer from process table
+    PCB* saved_next = new_pcb->pid_sibling_next;
     
-    // Set a unique PID or mark as copy
-    ready_pcb->pid = pcb->pid;  // Same PID or add 1000 to differentiate
-    
-    // Now we can safely modify ready_pcb's next pointer
-    ready_pcb->pid_sibling_next = NULL;
-    
-    if (ready_queue_head == NULL) {
+    // Insert into ready queue
+    if (self->ready_queue_head == NULL) {
+        self->ready_queue_head = new_pcb;
         if (circular) {
-            ready_pcb->pid_sibling_next = ready_pcb;
+            new_pcb->pid_sibling_next = new_pcb;
+        } else {
+            new_pcb->pid_sibling_next = NULL;
         }
-        return ready_pcb;
-    }
-    
-    // Insert at end
-    PCB* last = ready_queue_head;
-    
-    if (circular) {
-        while (last->pid_sibling_next != ready_queue_head) {
-            last = last->pid_sibling_next;
-        }
-        last->pid_sibling_next = ready_pcb;
-        ready_pcb->pid_sibling_next = ready_queue_head;
+        printf("  First PCB in ready queue\n");
     } else {
-        while (last->pid_sibling_next != NULL) {
-            last = last->pid_sibling_next;
+        // Find last node
+        PCB* last = self->ready_queue_head;
+        int count = 0;
+        
+        if (circular) {
+            while (last->pid_sibling_next != self->ready_queue_head && count < 1000) {
+                last = last->pid_sibling_next;
+                count++;
+            }
+            last->pid_sibling_next = new_pcb;
+            new_pcb->pid_sibling_next = self->ready_queue_head;
+        } else {
+            while (last->pid_sibling_next != NULL && count < 1000) {
+                last = last->pid_sibling_next;
+                count++;
+            }
+            last->pid_sibling_next = new_pcb;
+            new_pcb->pid_sibling_next = NULL;
         }
-        last->pid_sibling_next = ready_pcb;
+        
+        printf("  Added PCB %d to ready queue\n", new_pcb->pid);
     }
     
-    return ready_queue_head;
+    // Return the saved next pointer so caller can restore process table chain
+    return saved_next;
 }
+
+// PCB* op_push_to_ready_queue(PROCESS_MANAGER* self, PCB* pcb, bool circular) {
+//     printf("---Pushing PCB %d to ready queue (circular=%d)\n", pcb->pid, circular);
+    
+//     if (pcb == NULL) {
+//         return self->ready_queue_head;
+//     }
+    
+//     // Create a copy
+//     PCB* ready_pcb = (PCB*)malloc(sizeof(PCB));
+//     if (!ready_pcb) {
+//         printf("ERROR: Failed to allocate PCB copy\n");
+//         return self->ready_queue_head;
+//     }
+    
+//     // Copy the PCB
+//     memcpy(ready_pcb, pcb, sizeof(PCB));
+    
+//     // Create new statistics if needed
+//     if (pcb->statistics != NULL) {
+//         ready_pcb->statistics = (PROCESS_STATISTICS*)malloc(sizeof(PROCESS_STATISTICS));
+//         if (ready_pcb->statistics) {
+//             memcpy(ready_pcb->statistics, pcb->statistics, sizeof(PROCESS_STATISTICS));
+//         }
+//     }
+    
+//     // Set next pointer
+//     ready_pcb->pid_sibling_next = NULL;
+    
+//     if (self->ready_queue_head == NULL) {
+//         // First element
+//         if (circular) {
+//             ready_pcb->pid_sibling_next = ready_pcb;
+//         }
+//         self->ready_queue_head = ready_pcb;  // UPDATE THE HEAD
+//         printf("  First PCB in ready queue\n");
+//         return self->ready_queue_head;
+//     }
+    
+//     // Find last node
+//     PCB* last = self->ready_queue_head;
+//     int count = 0;
+    
+//     if (circular) {
+//         while (last->pid_sibling_next != self->ready_queue_head && count < 1000) {
+//             last = last->pid_sibling_next;
+//             count++;
+//         }
+//         last->pid_sibling_next = ready_pcb;
+//         ready_pcb->pid_sibling_next = self->ready_queue_head;
+//     } else {
+//         while (last->pid_sibling_next != NULL && count < 1000) {
+//             last = last->pid_sibling_next;
+//             count++;
+//         }
+//         last->pid_sibling_next = ready_pcb;
+//     }
+    
+//     printf("  Added PCB %d to ready queue\n", ready_pcb->pid);
+    
+//     // Return the HEAD (which hasn't changed for non-first insertions)
+//     return self->ready_queue_head;
+// }
 
 PCB* op_delete_from_ready_queue(PCB* ready_queue_head, PCB* pcb) {// the chaine node should be freed
 
@@ -849,9 +964,9 @@ bool op_pro_init(PROCESS_MANAGER* self, FILE* buffer, int algorithm) {
     self->update_self_temps = op_update_self_temps;
     self->find_max_arrival_time = op_find_max_arrival_time;
     self->get_max_arrival_time = op_proc_get_max_arrival_time;
+    self->sort_by_rt = op_sort_ready_by_rt;
 
     // self->sort_ready_by_fc = op_sort_ready_by_fc;
-    // self->sort_ready_by_rt = op_sort_ready_by_rt;
     // self->sort_ready_by_priority = op_sort_ready_by_priority;
     // self->sort_ready_by_burst = op_sort_ready_by_burst;
 

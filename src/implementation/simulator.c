@@ -122,22 +122,23 @@ bool op_signal_ressource_free(RESSOURCE_MANAGER* ressource_manager, RESSOURCE re
     return response;
 }
 
-PCB* op_simul_ask_for_next_ready_element(SIMULATOR* simulator, PCB* process) {
-    PCB* response = simulator->process_manager->get_next_ready_element(simulator->process_manager, process);
+PCB* op_simul_ask_for_next_ready_element(SIMULATOR* self, PCB* process) {
+    PCB* response = self->process_manager->get_next_ready_element(self->process_manager, process);
 
     return response;
 }
 
-bool op_simul_ask_sort_rt(SIMULATOR* simulator) {
-    bool response = simulator->process_manager->sort_by_rt(simulator->process_manager);
+bool op_simul_ask_sort_rt(SIMULATOR* self) {
+    
+    self->process_manager->ready_queue_head = self->process_manager->sort_by_rt(self->process_manager);
 
-    return response;
+    return true;
 }
 
-bool op_simul_ask_sort_priority(SIMULATOR* simulator) {
-    bool response = simulator->process_manager->sort_by_priority(simulator->process_manager);
+bool op_simul_ask_sort_priority(SIMULATOR* self) {
+    self->process_manager->ready_queue_head = self->process_manager->sort_by_priority(self->process_manager);
 
-    return response;
+    return true;
 }
 
 process_update op_sched_update_process(SIMULATOR* self, PCB* pcb, time_t* temps_fin, float* cpu_temps_used) { // with nullty check; updating temps_fin = market_terminated = update_turnround ; updating cpu_temps_used = updating_remaining_time
@@ -240,7 +241,14 @@ RESSOURCE_MANAGER* op_create_ressource_manager() {
 }
 
 bool op_simul_update_ready_queue(SIMULATOR* self, bool circular) {
-    return self->process_manager->update_read_queue(self->process_manager, circular);
+    
+    printf("trying updaaaaaaaation");
+
+
+    bool result = self->process_manager->update_read_queue(self->process_manager, circular);
+
+    
+    return result;
 }
 
 
@@ -297,6 +305,8 @@ WORK_RETURN op_simul_init(SIMULATOR* self, FILE* buffer) {
     self->simul_update_process_manager = op_simul_update_process_manager;
     self->get_max_arrival_time = op_simul_get_max_arrival_time;
     self->update_ready_queue = op_simul_update_ready_queue;
+    self->ask_sort_rt = op_simul_ask_sort_rt;
+
 
 
     // ---------- process manager
@@ -330,4 +340,3 @@ WORK_RETURN op_simul_init(SIMULATOR* self, FILE* buffer) {
 
     return WORK_DONE;
 }
-
