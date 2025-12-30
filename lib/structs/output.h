@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../../lib/structs/schedular.h"
+
 // Forward declarations to avoid circular includes
 typedef struct PCB PCB;
 typedef struct ORDONNANCEUR_STATISTICS ORDONNANCEUR_STATISTICS;
@@ -31,6 +33,8 @@ typedef struct PERFORMANCE_SUMMARY {
     
     // Completion order
     int completion_order[100]; // assuming max 100 processes
+
+    Algorithms algorithm;
     
 } PERFORMANCE_SUMMARY;
 
@@ -40,6 +44,6 @@ TASK log_execution_start(EXECUTION_SEGMENT** head, EXECUTION_SEGMENT** current, 
 TASK log_execution_end(EXECUTION_SEGMENT** current, float end_time, const char* reason);
 void print_gantt_chart(EXECUTION_SEGMENT* head);
 void calculate_performance_summary(PERFORMANCE_SUMMARY* ps, float total_time, ORDONNANCEUR_STATISTICS* stats);
-void print_performance_summary(PERFORMANCE_SUMMARY* summary);
+void print_performance_summary(PERFORMANCE_SUMMARY* summary, int algo);
 void print_process_details(PCB* process_table_head);
-void print_algorithm_output(EXECUTION_SEGMENT* head, PERFORMANCE_SUMMARY* ps, PCB* process_head, float total_time, ORDONNANCEUR_STATISTICS* stats);
+void print_algorithm_output(EXECUTION_SEGMENT* head, PERFORMANCE_SUMMARY* ps, PCB* process_head, float total_time, ORDONNANCEUR_STATISTICS* stats, int algo);

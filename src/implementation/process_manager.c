@@ -715,27 +715,7 @@ PROCESS_UPDATE op_pro_update_process(PROCESS_MANAGER* self, PCB* pcb, float *tem
     
     // updating the given fields
     if (temps_fin) { // updating temp fin = update tournround
-        printf("DEBUG: Updating process %d with temps_fin %.2f, arrival %.2f\n", pcb->pid, *temps_fin, pcb->statistics->temps_arrive);
-        fflush(stdout);
-        pcb->statistics->temps_fin = (float)*temps_fin;
-        pcb->statistics->tournround = (float)*temps_fin - pcb->statistics->temps_arrive;
-        pcb->statistics->temps_attente = pcb->statistics->tournround - pcb->burst_time;
-        printf("DEBUG: Calculated tournround %.2f, attente %.2f\n", pcb->statistics->tournround, pcb->statistics->temps_attente);
-        fflush(stdout);
-        pcb->etat = TERMINATED;
         self->ready_queue_head = self->delete_from_ready_queue(self, pcb, *temps_fin); // delete the process from ready queue when terminated and the function return the head of the tready queue so capturing it and assigning it to ready_queue_head
-
-        // Update the original PCB in process_table
-        PCB* original = self->process_table_head;
-        while (original != NULL) {
-            if (original->pid == pcb->pid) {
-                printf("DEBUG: Updating original PCB %d, tournround %.2f\n", original->pid, pcb->statistics->tournround);
-                fflush(stdout);
-                memcpy(original->statistics, pcb->statistics, sizeof(PROCESS_STATISTICS));
-                break;
-            }
-            original = original->pid_sibling_next;
-        }
     }
 
     return UPDATED;
@@ -960,6 +940,7 @@ TASK op_mark_process_table_pcb_terminated(PROCESS_MANAGER* self, PCB* pcb, float
 
                 // set temps fin as completion time
                 current->statistics->temps_fin = completion_time;
+                current->statistics->tournround = completion_time - current->statistics->temps_arrive;
                 
                 // Calculate waiting time: completion_time - arrival_time - burst_time
                 float waiting_time = completion_time - 

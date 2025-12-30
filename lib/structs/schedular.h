@@ -2,6 +2,11 @@
 
 #include "../../lib/structs/process.h" // for pcb
 #include "../../lib/structs/simulator.h" // for SIMULATOR
+
+typedef enum {
+    RR, SRTF, PPP, FCFS, SJF
+} Algorithms;
+
 #include "../../lib/structs/execution_queue.h" // for the exec queue
 #include "../../lib/structs/ressource.h"
 #include "../../lib/structs/process.h"
@@ -9,9 +14,6 @@
 
 #include <unistd.h> // for time wait in second
 
-typedef enum {
-    RR, SRTF, PPP, FCFS, SJF
-} Algorithms;
 
 
 typedef enum {
@@ -94,7 +96,6 @@ typedef struct ORDONNANCEUR {
     EXECUTION_SEGMENT* current_segment;
     PERFORMANCE_SUMMARY* performance_summary;
 
-    
     // setters
     // fields setters
     SETTER (*set_algorithm)(struct ORDONNANCEUR* self, Algorithms algorithm);
@@ -162,7 +163,7 @@ typedef struct ORDONNANCEUR {
     TASK (*sched_update_process_manager)(struct ORDONNANCEUR* self, float temps, float* runed);
     
     // statistics related
-    TASK (*update_schedular_statistics)(struct ORDONNANCEUR* self, float* exec_time, float* burst, float* temp_attente, bool finished);
+    TASK (*update_schedular_statistics)(struct ORDONNANCEUR* self, float* exec_time, float* turnaround, float* temp_attente, bool finished);
     float (*get_max_arrival_time)(struct ORDONNANCEUR* self);
     
 } ORDONNANCEUR;

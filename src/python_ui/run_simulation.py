@@ -14,6 +14,9 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib
 matplotlib.use('Agg')
 
+# Import comparison module
+from comparison import AlgorithmComparison
+
 class SchedulerUI:
     def __init__(self, root):
         self.root = root
@@ -77,7 +80,12 @@ class SchedulerUI:
         # Run button
         run_btn = ttk.Button(control_frame, text="▶ RUN SIMULATION", 
                            command=self.run_simulation, style="Run.TButton")
-        run_btn.pack(pady=30, fill=tk.X)
+        run_btn.pack(pady=15, fill=tk.X)
+        
+        # Compare button
+        compare_btn = ttk.Button(control_frame, text="📊 COMPARE ALGORITHMS", 
+                                command=self.show_comparison)
+        compare_btn.pack(pady=15, fill=tk.X)
         
         # Status
         self.status_var = tk.StringVar(value="Ready")
@@ -114,6 +122,15 @@ class SchedulerUI:
         self.details_text = scrolledtext.ScrolledText(details_frame, wrap=tk.WORD,
                                                      font=('Courier', 9))
         self.details_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        
+        # Tab 4: Comparison
+        comparison_frame = ttk.Frame(self.notebook)
+        self.notebook.add(comparison_frame, text="⚖️ Comparison")
+        
+        # Comparison text
+        self.comparison_text = scrolledtext.ScrolledText(comparison_frame, wrap=tk.WORD,
+                                                         font=('Courier', 9))
+        self.comparison_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
     
     def toggle_quantum(self, *args):
         """Show/hide quantum input based on algorithm"""
@@ -134,11 +151,12 @@ class SchedulerUI:
         
         try:
             # Map algorithm name to C input number
+            # 0 - RR, 1 - FCFS, 2 - SRTF, 3 - PPP, 4 - PPN, 5 - SJF
             algo_map = {
-                "RR": "0", "SRTF": "1", "PPP": "2", 
-                "PPN": "3", "FCFS": "4", "SJF": "5"
+                "RR": "0", "FCFS": "1", "SRTF": "2", 
+                "PPP": "3", "PPN": "4", "SJF": "5"
             }
-            algo_num = algo_map.get(self.algo_var.get(), "4")
+            algo_num = algo_map.get(self.algo_var.get(), "1")
             
             # Prepare arguments for C program
             args = [self.c_executable, algo_num, self.quantum_var.get(), self.file_var.get()]
@@ -348,7 +366,21 @@ class SchedulerUI:
     def display_performance_summary(self):
         """Display performance summary"""
         try:
-            with open("outputs/performance_summary.txt", "r") as f:
+            # Map algorithm name to performance summary filename
+            # 0 - RR, 1 - FCFS, 2 - SRTF, 3 - PPP, 4 - PPN, 5 - SJF
+            algo_file_map = {
+                "RR": "performance_summary_rr.txt",
+                "FCFS": "performance_summary_fcfs.txt",
+                "SRTF": "performance_summary_srtf.txt",
+                "PPP": "performance_summary_ppp.txt",
+                "PPN": "performance_summary_ppn.txt",
+                "SJF": "performance_summary_sjf.txt"
+            }
+            
+            filename = algo_file_map.get(self.algo_var.get(), "performance_summary_fcfs.txt")
+            filepath = f"outputs/{filename}"
+            
+            with open(filepath, "r") as f:
                 content = f.read()
             
             # Format with box drawing characters
@@ -471,6 +503,35 @@ class SchedulerUI:
         except Exception as e:
             self.details_text.delete(1.0, tk.END)
             self.details_text.insert(1.0, f"Error loading process details:\n{str(e)}\n\nRaw content:\n{content}")
+    
+    def show_comparison(self):
+        """Display algorithm comparison"""
+        try:
+            # Initialize comparison
+            comparator = AlgorithmComparison(output_dir="outputs")
+            
+            # Generate comparison report
+            report = comparator.get_comparison_report()
+            
+            # Display in comparison tab
+            self.comparison_text.delete(1.0, tk.END)
+            self.comparison_text.insert(1.0, report)
+            
+            # Switch to comparison tab
+            self.notebook.select(3)  # Comparison is the 4th tab (index 3)
+            
+            # Update status
+            all_present, missing = comparator.check_data_availability()
+            if all_present:
+                self.status_var.set("✅ Comparison completed")
+            else:
+                self.status_var.set(f"⚠️ Comparison: {len(missing)} algorithm(s) missing data")
+                
+        except Exception as e:
+            self.comparison_text.delete(1.0, tk.END)
+            self.comparison_text.insert(1.0, f"Error generating comparison:\n{str(e)}")
+            self.status_var.set("❌ Comparison failed")
+            messagebox.showerror("Error", f"Failed to generate comparison: {str(e)}")
 
 def main():
     """Main entry point"""

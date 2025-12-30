@@ -1,20 +1,53 @@
 #include "../../lib/structs/execution_queue.h"
 
 
-TASK op_update_schedular_statistics(ORDONNANCEUR* self, float* exec_time, float* burst, float* temp_attente, bool finished) { // must check nullty
+TASK op_update_schedular_statistics(ORDONNANCEUR* self, float* exec_time, float* turnaround, float* temp_attente, bool finished) { // must check nullty
+
+    if (self == NULL) {
+        fprintf(stderr, "ERROR: self is NULL in op_update_schedular_statistics\n");
+        return TASK_ERR;
+    }
+    
+    if (self->statistics == NULL) {
+        fprintf(stderr, "ERROR: statistics is NULL in op_update_schedular_statistics\n");
+        return TASK_ERR;
+    }
+
+    if (exec_time == NULL) {
+        fprintf(stderr, "ERROR: exec_time is NULL in op_update_schedular_statistics\n");
+        return TASK_ERR;
+    }
 
     if (finished == true) {
+        // When finished, turnaround and temp_attente must be provided
+        if (turnaround == NULL || temp_attente == NULL) {
+            fprintf(stderr, "ERROR: turnaround or temp_attente is NULL when finished=true\n");
+            return TASK_ERR;
+        }
         
-            self->statistics->processus_termine_count++;
-            self->statistics->cpu_total_temps_usage += *exec_time;
-            self->statistics->total_turnround += *burst;
-            self->statistics->troughtput = (float)self->statistics->processus_termine_count / self->statistics->total_turnround;
-            self->statistics->total_temps_attente += *temp_attente;
+        // Safeguard: ensure waiting time is not negative
+        float waiting_time = *temp_attente;
+        if (waiting_time < 0.0f) {
+            fprintf(stderr, "WARNING: Negative waiting time detected (%.2f), setting to 0\n", waiting_time);
+            waiting_time = 0.0f;
+        }
+        
+        fprintf(stderr, "DEBUG: Updating statistics - exec_time=%.2f, turnaround=%.2f, waiting=%.2f\n",
+               *exec_time, *turnaround, waiting_time);
+        
+        self->statistics->processus_termine_count++;
+        self->statistics->cpu_total_temps_usage += *exec_time;
+        self->statistics->total_turnround += *turnaround;
+        self->statistics->total_temps_attente += waiting_time;
+        
+        fprintf(stderr, "DEBUG: After update - count=%d, cpu_usage=%.2f, total_turnround=%.2f, total_waiting=%.2f\n",
+               self->statistics->processus_termine_count, self->statistics->cpu_total_temps_usage,
+               self->statistics->total_turnround, self->statistics->total_temps_attente);
 
     } else {
-
-            self->statistics->context_switch++;
-            self->statistics->cpu_total_temps_usage += *exec_time;
+        // Note: Context switches are counted when we actually switch to a different process
+        // in the scheduling algorithms, not here (to avoid double-counting)
+        self->statistics->cpu_total_temps_usage += *exec_time;
     }
     
     return TASK_SUCC;
@@ -75,6 +108,7 @@ void op_calculate_performance_summary(ORDONNANCEUR* self, float total_time) {
         }
     }
     PERFORMANCE_SUMMARY* ps = self->performance_summary;
+    ps->algorithm = self->algorithm;
     ps->total_simulation_time = total_time;
     ps->cpu_utilization_percent = (self->statistics->cpu_total_temps_usage / total_time) * 100.0f;
     if (self->statistics->processus_termine_count > 0) {
@@ -84,14 +118,18 @@ void op_calculate_performance_summary(ORDONNANCEUR* self, float total_time) {
         ps->avg_turnaround_time = 0.0f;
         ps->avg_waiting_time = 0.0f;
     }
-    ps->throughput = self->statistics->troughtput;
+    if (total_time > 0) {
+        ps->throughput = (float)self->statistics->processus_termine_count / total_time;
+    } else {
+        ps->throughput = 0.0f;
+    }
     ps->context_switches = self->statistics->context_switch;
     ps->preemptions = 0; // TODO: count from segments
     ps->priority_inversions = 0;
     ps->starved_processes = 0;
 }
 
-void op_print_performance_summary(PERFORMANCE_SUMMARY* summary) {
+void op_print_performance_summary(PERFORMANCE_SUMMARY* summary, int algo) {
     printf("\n=== Performance Summary ===\n");
     printf("Total Simulation Time: %.2f\n", summary->total_simulation_time);
     printf("CPU Utilization: %.2f%%\n", summary->cpu_utilization_percent);

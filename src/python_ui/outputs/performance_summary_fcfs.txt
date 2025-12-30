@@ -1,0 +1,7 @@
+Algorithm: 1
+Total Simulation Time: 181.10
+CPU Utilization: 100.00%
+Average Turnaround Time: 88.87
+Average Waiting Time: 84.93
+Throughput: 0.2540 processes/unit
+Context Switches: 45

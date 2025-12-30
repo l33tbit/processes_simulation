@@ -1,0 +1,52 @@
+╔═══════════════════════════════════════════════════════════════════════════════════╗
+║                        ALGORITHM COMPARISON REPORT                                ║
+╠═══════════════════════════════════════════════════════════════════════════════════╣
+
+📊 RANKING BY AVERAGE WAITING TIME (Lower is Better)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Rank   Algorithm                 Waiting Time    Full Name
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🥇 1    SRTF                             56.67     Shortest Remaining Time First
+🥈 2    PPP                              59.45     Priority Preemptive
+🥉 3    PPN                              63.83     Priority Non-Preemptive
+   4    SJF                              65.44     Shortest Job First
+   5    FCFS                             84.93     First Come First Served
+   6    RR                              131.24     Round Robin
+
+
+📊 RANKING BY AVERAGE TURNAROUND TIME (Lower is Better)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Rank   Algorithm                 Turnaround Time Full Name
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🥇 1    SRTF                             60.52     Shortest Remaining Time First
+🥈 2    PPP                              63.31     Priority Preemptive
+🥉 3    PPN                              67.77     Priority Non-Preemptive
+   4    SJF                              69.51     Shortest Job First
+   5    FCFS                             88.87     First Come First Served
+   6    RR                              135.31     Round Robin
+
+
+📊 RANKING BY THROUGHPUT (Higher is Better)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Rank   Algorithm                 Throughput      Full Name
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🥇 1    SRTF                            0.2594     Shortest Remaining Time First
+🥈 2    PPP                             0.2594     Priority Preemptive
+🥉 3    FCFS                            0.2540     First Come First Served
+   4    PPN                             0.2540     Priority Non-Preemptive
+   5    RR                              0.2461     Round Robin
+   6    SJF                             0.2461     Shortest Job First
+
+
+📋 SUMMARY TABLE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Algorithm    Waiting      Turnaround   Throughput   CPU Util     Context Sw  
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FCFS              84.93        88.87       0.2540       100.00%          45   
+PPN               63.83        67.77       0.2540       100.00%          45   
+PPP               59.45        63.31       0.2594       100.00%          44   
+RR               131.24       135.31       0.2461       100.00%         124   
+SJF               65.44        69.51       0.2461       100.00%          48   
+SRTF              56.67        60.52       0.2594       100.00%          63   
+
+╚═══════════════════════════════════════════════════════════════════════════════════╝
