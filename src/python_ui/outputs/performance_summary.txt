@@ -1,0 +1,12 @@
+Total Simulation Time: 199.10
+CPU Utilization: 100.00%
+Average Turnaround Time: 4.06
+Average Waiting Time: 812589326863958016.00
+Throughput: 0.2461 processes/unit
+Context Switches: 76
+Total Simulation Time: 181.10
+CPU Utilization: 0.00%
+Average Turnaround Time: 0.00
+Average Waiting Time: 0.00
+Throughput: 0.0000 processes/unit
+Context Switches: 0

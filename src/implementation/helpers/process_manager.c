@@ -11,19 +11,12 @@
 #include <limits.h> // for INT_MAX AND INT_MIN
 
 
-// need_to_be_changed
+// moke ressources need_to_be_changed if ressources changed
 char instructions_list[6][4] = {"AAA", "BBB", "CCC", "DDD", "EEE", "FFF"};
 int instruction_list_len = 6;
 
-// ------------structs
-typedef struct buffer_return {
-    PCB* pcb;
-    int size;
-} buffer_return;
 
-
-// process_name,user_id,ppid,priority,[instruction],n_instruction,memoire,burst,
-typedef struct parser_return {
+typedef struct PARSED_RETURN {
     char process_name[20];
     char user_id[20];
     int priority;
@@ -34,13 +27,13 @@ typedef struct parser_return {
     time_t temps_creation;
     float temps_arrive;
     bool unvalid_process_csv_check;
-} parser_return;
+} PARSED_RETURN;
 
-typedef struct insruction_parser_return {
+typedef struct INSTRUCTION_PARSED_RETURN {
     INSTRUCTION* instructions_head;
     INSTRUCTION* instructions_fin; //adding it for time consuming
     int count;
-} insruction_parser_return;
+} INSTRUCTION_PARSED_RETURN;
 
 
 // -----------------helpers 
@@ -54,7 +47,7 @@ PCB* pcb_chaine(PCB* pcb, PCB* pcb_end) {
     return pcb;
 }
 
-bool check_known_ressource(char ressource[]) {
+TASK check_known_ressource(char ressource[]) {
     int flag = 0;
     for (int i = 0; i < 6; i++) {
         if (strcmp(instructions_list[i], ressource) == 0) {
@@ -64,9 +57,9 @@ bool check_known_ressource(char ressource[]) {
     }
 
     if (flag == 1) 
-        return true;
+        return TASK_SUCC;
     else
-        return false;
+        return TASK_ERR;
 
 }
 
@@ -83,7 +76,7 @@ void free_instructions_chaine(INSTRUCTION* instruct_head) {
     }
 }
 
-// btw this list is for testing purpose char instructions_list[6][4] = {"AAA", "BBB", "CCC", "DDD", "EEE", "FFF"};
+// btw this list is for simulation purpose char instructions_list[6][4] = {"AAA", "BBB", "CCC", "DDD", "EEE", "FFF"};
 INSTRUCTION* add_instruction_type(int count, INSTRUCTION* instruct, char instruction[]) {
     bool check = false; // init as false and if conditio nmet make true then check and raise error
     if (strcmp(instruction, "AAA") == 0) { instruct->type = AAA; check = true;}
@@ -113,20 +106,23 @@ INSTRUCTION* returned_instructions_fin_not_end(INSTRUCTION* fin) {
     return fin;
 }
 
-void free_parsed_buffer(parser_return* paresed_buffer) {
-    free_instructions_chaine(paresed_buffer->instructions_head);
+void free_parsed_buffer(PARSED_RETURN* paresed_buffer) {
+    if (paresed_buffer) {
+        free_instructions_chaine(paresed_buffer->instructions_head);
+        free(paresed_buffer);
+    }
 }
 
 // ---------------pricipale functions
 
 // prototypes latb9a yaati error d return type unmatched like (char*)* chi haja hkk
-parser_return* parser_func(char* line);
-insruction_parser_return* instruction_parser(char* value);
+PARSED_RETURN* parser_func(char* line);
+INSTRUCTION_PARSED_RETURN* instruction_parser(char* value);
 
 
 
 
-PCB* extract_from_buffer(FILE* csv_buffer) {
+PCB* extract_from_buffer(PROCESS_MANAGER* self) {
     PCB* pcb_chaine_head = NULL;
     PCB* pcb_chaine_end = NULL;
     int pcb_flag = 0;
@@ -135,13 +131,13 @@ PCB* extract_from_buffer(FILE* csv_buffer) {
     size_t size = 128;
     char* line_pcb = (char*)malloc(size);
     if (line_pcb == NULL) {
-        fprintf(stderr, "ERROR: Failed to allocate line buffer\n");
+        fprintf(stderr, "ERROR ON : extract_from_buffer Failed to allocate line buffer\n");
         exit(1);
     }
     
-    printf("=== Building Process Table ===\n");
+    printf("=== creating process table ===\n");
     
-    while (fgets(line_pcb, size, csv_buffer) != NULL) {
+    while (fgets(line_pcb, size, self->get_processus_buffer(self)) != NULL) {
         // Remove newline
         line_pcb[strcspn(line_pcb, "\n")] = 0;
         
@@ -151,67 +147,68 @@ PCB* extract_from_buffer(FILE* csv_buffer) {
         }
         
         process_count++;
-        printf("Processing line %d: %s\n", process_count, line_pcb);
+        printf("processing line %d: %s\n", process_count, line_pcb);
         
-        parser_return* parsed_buffer = parser_func(line_pcb);
+        PARSED_RETURN* parsed_buffer = parser_func(line_pcb);
         
         if (parsed_buffer == NULL) {
-            fprintf(stderr, "ERROR: parser_func returned NULL for line: %s\n", line_pcb);
+            fprintf(stderr, "ERROR ON: parser_func returned NULL for line: %s\n", line_pcb);
             continue;
         }
         
         if (parsed_buffer->unvalid_process_csv_check) {
-            fprintf(stderr, "WARNING: Invalid CSV format on line: %s\n", line_pcb);
+            fprintf(stderr, "WARN: Invalid CSV format on line: %s\n", line_pcb);
             free_parsed_buffer(parsed_buffer);
             continue;
         }
         
-        // Create PCB
-        PCB* pcb = (PCB*)calloc(1, sizeof(PCB));
-        PROCESS_STATISTICS* statistics = (PROCESS_STATISTICS*)calloc(1, sizeof(PROCESS_STATISTICS));
+        // creating the pcb
+        PCB* pcb = (PCB*)calloc(1, sizeof(PCB)); // usiing calloc to prevent valeur aleatoire
+        PROCESS_STATISTICS* statistics = (PROCESS_STATISTICS*)calloc(1, sizeof(PROCESS_STATISTICS)); // same
         
         if (!pcb || !statistics) {
-            fprintf(stderr, "ERROR: Memory allocation failed for PCB or statistics\n");
+            fprintf(stderr, "ERROR ON: extract_from_buffer pcb or statistics allocation failed\n");
             if (pcb) free(pcb);
             if (statistics) free(statistics);
             free_parsed_buffer(parsed_buffer);
             continue;
         }
-        
-        // Initialize PCB
-        pcb->pid = process_count;  // Assign sequential PID
+
+        // init
+        pcb->pid = process_count; 
+        // pcb->init(pcb);
         pcb->statistics = statistics;
-        
-        // Copy process name (safely)
+        // copy the process name
         strncpy(pcb->process_name, parsed_buffer->process_name, 
                 sizeof(pcb->process_name) - 1);
         pcb->process_name[sizeof(pcb->process_name) - 1] = '\0';
         
-        // Copy user ID (safely)
+        // then user id
         strncpy(pcb->user_id, parsed_buffer->user_id, 
                 sizeof(pcb->user_id) - 1);
         pcb->user_id[sizeof(pcb->user_id) - 1] = '\0';
         
-        // Copy other fields
+        // rest fields
         pcb->prioritie = parsed_buffer->priority;
         pcb->instructions_head = parsed_buffer->instructions_head;
+        parsed_buffer->instructions_head = NULL;
         pcb->programme_compteur = parsed_buffer->instructions_count;
         pcb->memoire_necessaire = parsed_buffer->memoire;
         pcb->burst_time = parsed_buffer->burst;
-        pcb->remaining_time = parsed_buffer->burst;  // Initialize remaining time
+        pcb->remaining_time = parsed_buffer->burst;  // init remaining time
         
-        // Set statistics
+        // statistics
         pcb->statistics->temps_creation = parsed_buffer->temps_creation;
         pcb->statistics->temps_arrive = parsed_buffer->temps_arrive;
-        pcb->statistics->temps_attente = 0.0f;  // Initialize wait time
+        pcb->statistics->temps_attente = 0.0f;  // init temps attente
         
-        // CRITICAL: Set next pointer to NULL (linear list)
-        pcb->pid_sibling_next = NULL;
+        pcb->etat = PROCESS_NEW; // setting state needed in pushing from process table to ready queue
+        pcb->pid_sibling_next = NULL; // needed af to prevent valeur aleatoire
         
-        // Free parsed buffer (instructions are now owned by PCB)
+        // free the parsed buffer
         free(parsed_buffer);
         
-        // Add to linked list
+        // chaine the pcb
         if (pcb_chaine_head == NULL) {
             pcb_chaine_head = pcb;
             pcb_chaine_end = pcb;
@@ -220,323 +217,23 @@ PCB* extract_from_buffer(FILE* csv_buffer) {
             pcb_chaine_end = pcb;
         }
         
-        printf("  Added PCB %d: %s (arrival: %f, burst: %f)\n", 
+        printf("added PCB %d: %s (temps arrive: %f, burst: %f)\n", 
                pcb->pid, pcb->process_name, 
                pcb->statistics->temps_arrive, pcb->burst_time);
     }
     
     free(line_pcb);
     
-    // CRITICAL: Ensure the list is linear (not circular)
     if (pcb_chaine_end != NULL) {
         pcb_chaine_end->pid_sibling_next = NULL;
     }
     
-    printf("=== Process Table Complete: %d processes ===\n\n", process_count);
+    printf("=== process table complete: %d processes ===\n\n", process_count);
     return pcb_chaine_head;
 }
 
-// parser_return* parser_func(char* line) {
-
-//     parser_return* parsed_line = (parser_return*)malloc(sizeof(parser_return));
-//     // declaring all fields for random valeur
-//     if (parsed_line) {
-//         parsed_line->process_name[0] = '\0';
-//         parsed_line->user_id[0] = '\0';
-//         parsed_line->priority = 0;
-//         parsed_line->instructions_head = NULL;
-//         parsed_line->instructions_count = 0;
-//         parsed_line->memoire = 0;
-//         parsed_line->burst = 0.0f;
-//         parsed_line->temps_creation = time(NULL);
-//         parsed_line->temps_arrive = 0.0f;
-//         parsed_line->unvalid_process_csv_check = true;
-//     }
-
-//     int char_count = 0; 
-//     int value_number = 0;
-//     char* value = (char*)malloc(2); // 2 for null terminator
-//     int line_length = strlen(line); // for time consuming
-//     value[0] = '\0';
-//     // if line is empty
-//     if (line_length == 0) { 
-//         fprintf(stderr, "ERROR ON: parser function parser line gived is empty\n");
-//         free(parsed_line);
-//         free(value);
-//         exit(1);
-//     }
-//     for(int i = 0; i < line_length;i++) { // line_size
-//         // wh9 lah ta chi 6h bach nl9a had condition 2 mn baad || hia li kadir lia mochkil flparsing dial instructions
-//         // chi 30min bared hd lcomment li lfo9 ead l9it bli f csv l instructions kandirom hkk [AAA,BBB] warah l condition ghatl9a , w ghatbreaki wtf 
-//         if (line[i] != ',' ) { // so it's a char of ressource
-//             char_count++;
-//             // realloc check
-//             char* value_temp = (char*)realloc(value, char_count + 1); // extra 1 is for null terminator
-//             if (!value_temp) {
-//                 fprintf(stderr, "ERROR ON: parser function realloc failed\n");
-//                 free(parsed_line);
-//                 free(value);
-//                 exit(1);
-//             }
-//             value = value_temp;
-//             value[char_count - 1] = line[i];
-//             value[char_count] = '\0';
-
-//         } else if (line[i] == ',') {
-//             if (value_number > 8) {
-//                     fprintf(stderr, "ERROR ON: parser function not all the seven fields are present in line %s", line);
-//                     free(parsed_line);
-//                     free(value); // Free value here too
-//                     exit(1);
-//             }
-//             switch (value_number) {
-//                 case 0:
-//                     if (strlen(value) > 20) {
-//                         fprintf(stderr, "ERROR ON: parser function process line in csv '%s' \nhas exceded 20 caracter in process_name\n", line);
-//                         free(parsed_line);
-//                         free(value); // free the value
-//                         exit(1);
-//                     }
-//                     strncpy(parsed_line->process_name, value, sizeof(parsed_line->process_name) - 1); // copy just the size of process_name and leave on char fo \0
-//                     parsed_line->process_name[sizeof(parsed_line->process_name) - 1] = '\0'; // add null terminator
-//                     // free and reallocate
-//                     free(value);
-//                     value = (char*)malloc(2); // Allocate 2 for null terminator
-//                     char_count = 0;
-//                     value[0] = '\0';
-//                     break;
-//                 case 1:
-//                     if (strlen(value) > 20) {
-//                         fprintf(stderr, "ERROR ON: parser function process line in csv '%s' \nhas exceded 20 caracter in user_id\n", line);
-//                         free(parsed_line);
-//                         free(value); // free the value
-//                         exit(1);
-//                     }
-//                     strncpy(parsed_line->user_id, value, sizeof(parsed_line->user_id) - 1); // copy just the size of process_name 
-//                     parsed_line->user_id[sizeof(parsed_line->user_id) - 1] = '\0'; // add null terminator
-//                     // Free and reallocate
-//                     free(value);
-//                     value = (char*)malloc(2); // Allocate 2 for null
-//                     char_count = 0;
-//                     value[0] = '\0';
-//                     break;    
-//                 case 2:
-//                     long value_to_long = strtol(value, NULL, 10);
-//                     int val_int = 0;
-//                     // casting direct to int can make overflow o we check the limits
-//                     if (value_to_long > INT_MAX || value_to_long < INT_MIN) {
-//                         // if overflow
-//                         fprintf(stderr, "ERROR ON: parser function process line in csv '%s' \npriority is ouuuut of range\n", line);
-//                         free(parsed_line);
-//                         free(value); // if error free value
-//                         exit(1);
-//                     } else {
-//                         val_int = (int)value_to_long;
-//                     }
-
-//                     if (val_int > 5 || val_int < 1) {
-//                         fprintf(stderr, "ERROR ON: parser function process line in csv '%s' \npriority out of range(1-5)\n", line);
-//                         free(parsed_line);
-//                         free(value); // free the value
-//                         exit(1);
-//                     }
-//                     parsed_line->priority = val_int; // atoi stand for ascii to integer and located in stdlib; maybe make ours if we still have time
-//                     free(value);
-//                     value = (char*)malloc(2);
-//                     char_count = 0;
-//                     value[0] = '\0';
-//                     break;    
-//                 case 3:
-//                     if (strlen(value) < 1 || strlen(value) > 60000) {
-//                         fprintf(stderr, "ERROR ON: parser function process line in csv '%s' \ninstructions error\n", line);
-//                         free(parsed_line);
-//                         free(value); // free the value
-//                         exit(1);
-//                     }
-//                     insruction_parser_return* parsed_instructions = instruction_parser(value);
-//                     if (parsed_instructions == NULL || parsed_instructions->instructions_head == NULL) { // NULLTY CHECK
-//                         fprintf(stderr, "ERROR ON: parser line function, instruction_parser has returned a NULL value\n"); 
-//                         if (parsed_instructions) {
-//                             free_instructions_chaine(parsed_instructions->instructions_head);
-//                             free(parsed_instructions);
-//                         }
-//                         free(parsed_line);
-//                         free(value); // free the value
-//                         exit(1);
-//                     }
-//                     parsed_line->instructions_head = parsed_instructions->instructions_head; // we assign the adress to the variable we'll return
-//                     parsed_line->instructions_count = parsed_instructions->count; // here we define the count to check later from csv 
-//                     // free parsed after extracting 
-//                     free(parsed_instructions);
-//                     // Free and reallocate 
-//                     free(value);
-//                     value = (char*)malloc(2); 
-//                     char_count = 0;
-//                     value[0] = '\0';
-//                     break;
-//                 case 4:
-//                     long ins_cnt_lng = strtol(value, NULL, 10);
-//                     int value__int = 0;
-//                     if (ins_cnt_lng > INT_MAX || ins_cnt_lng < INT_MIN) {
-//                         // if overflow case
-//                         fprintf(stderr, "ERROR ON: parser function process line in csv '%s' \ninstructions are out of range\n", line);
-//                         free_instructions_chaine(parsed_line->instructions_head);
-//                         free(parsed_line);
-//                         free(value); // free the value
-//                         exit(1);
-//                     } else {
-//                         value__int = (int)ins_cnt_lng;
-//                     }
-
-//                     if (value__int == 0) {
-//                         fprintf(stderr, "ERROR ON: the parser function the instructions_count specified is invalid\n");
-//                         free_instructions_chaine(parsed_line->instructions_head);
-//                         free(parsed_line);
-//                         free(value);
-//                         exit(1);
-//                     }
-//                     if (parsed_line->instructions_count != value__int) { // we check if the parsed ressource count are correct actualy this add a layer of validating
-//                         fprintf(stderr, "ERROR ON: the parser function the instructions_count specified in csv :%d doesn't equal to the counted by parser: %d\n", value__int, parsed_line->instructions_count);
-//                         free_instructions_chaine(parsed_line->instructions_head);
-//                         free(parsed_line);
-//                         free(value); // free the value
-//                         exit(1);
-//                     }
-//                     free(value);
-//                     value = (char*)malloc(2);
-//                     char_count = 0;
-//                     value[0] = '\0';
-//                     break;
-//                 case 5:
-//                     long memoire_lng = strtol(value, NULL, 10); // 10 for base deciaml
-//                     int value_int = 0;
-//                     if (memoire_lng > INT_MAX || memoire_lng < INT_MIN) {
-//                         // if overflow case
-//                         fprintf(stderr, "ERROR ON: parser function process line in csv '%s' \ninstructions are out of range\n", line);
-//                         free_instructions_chaine(parsed_line->instructions_head);
-//                         free(parsed_line);
-//                         free(value); // free the value
-//                         exit(1);
-//                     } else {
-//                         value_int = (int)memoire_lng;
-//                     }
-//                     if (value_int == 0) {
-//                         fprintf(stderr, "ERROR ON: the parser function the memoire specified is invalid\n");
-//                         free_instructions_chaine(parsed_line->instructions_head);                        
-//                         free(parsed_line);
-//                         free(value); // free the value
-//                         exit(1);
-//                     }
-//                     parsed_line->memoire = value_int;
-//                     free(value);
-//                     value = (char*)malloc(2);
-//                     char_count = 0;
-//                     value[0] = '\0';
-//                     break;
-//                 case 6:
-//                     float burst = strtof(value, NULL);
-//                     if (burst == 0) {
-//                         fprintf(stderr, "ERROR ON: the parser function the BURST specified is invalid\n");
-//                         free_instructions_chaine(parsed_line->instructions_head);
-//                         free(parsed_line);
-//                         free(value); // free the value
-//                         exit(1);
-//                     }
-//                     parsed_line->burst = burst;
-//                     parsed_line->temps_creation = time(NULL); // spawn creation time
-//                     free(value);
-//                     value = (char*)malloc(2);
-//                     char_count = 0;
-//                     value[0] = '\0';
-//                     break;
-//                 case 7:
-//                     printf("DEBUG: Parsing arrival time from value: '%s'\n", value);
-//                     float temp_arrive = strtof(value, NULL);
-//                     printf("DEBUG: Parsed arrival time: %f\n", temp_arrive);
-//                     // if (temp_arrive == 0) {
-//                     //     fprintf(stderr, "ERROR ON: the parser function temps arrive is invalid\n");
-//                     //     free_instructions_chaine(parsed_line->instructions_head);
-//                     //     free(parsed_line);
-//                     //     free(value); // free the value
-//                     //     exit(1);
-//                     // }
-//                     parsed_line->unvalid_process_csv_check = false;
-//                     parsed_line->temps_arrive = temp_arrive;
-
-//                     free(value);
-//                     value = (char*)malloc(2);
-//                     char_count = 0;
-//                     value[0] = '\0';    
-//                     printf("DEBUG: Parsed arrival time: %f for process %s\n", parsed_line->temps_arrive, parsed_line->process_name);
-//                     break;
-//                 default:
-//                     free_instructions_chaine(parsed_line->instructions_head);
-//                     free(parsed_line);
-//                     free(value); // free the value
-//                     fprintf(stderr, "ERROR ON: the parser function the value_number has exceded the number of columns in csv file (protocol: 7) current:%d\n", value_number);
-//                     exit(1);
-//             }
-//             // si + 8 rah field exceeded
-//             if (value_number > 8) {
-//                 fprintf(stderr, "ERROR ON: parser function fields excedded in line %s", line);
-//                 if (value) free(value);
-//                 free_instructions_chaine(parsed_line->instructions_head);
-//                 free(parsed_line);
-//                 free(value);
-//                 exit(1);
-//             }
-//             value_number++;
-//         } else {
-//             fprintf(stderr, "ERROR ON: parser function on line %s\nunknwon error", line);
-//             free(parsed_line);
-//             free(value);
-//             exit(1);
-//         }
-//     }
-
-//     // if there is missing field
-//     if (char_count > 0 && value_number < 8) {
-//         // missing temps arrive
-//         if (value_number == 7) {
-//             float temps_arrive = strtof(value, NULL);
-//             // if (temps_arrive == 0) {
-//             //     fprintf(stderr, "ERROR ON: the parser function the BURST specified is invalid\n");
-//             //     free_instructions_chaine(parsed_line->instructions_head);
-//             //     free(parsed_line);
-//             //     free(value);
-//             //     exit(1);
-//             // }
-//             parsed_line->unvalid_process_csv_check = false;
-//             parsed_line->temps_arrive = temps_arrive;
-//             // parsed_line->temps_creation = time(NULL);
-//             value_number++;
-//         } else {
-//             fprintf(stderr, "ERROR ON: parser function incomplete line, got %d fields need 8\n", value_number);
-//             free_instructions_chaine(parsed_line->instructions_head);
-//             free(parsed_line);
-//             free(value);
-//             exit(1);
-//         }
-//     }
-    
-//     // make sure we have all 8 fields
-//     if (value_number > 8) {
-//         fprintf(stderr, "ERROR ON: parser function incomplete line, got %d fields need 7 in %s\n", value_number, value);
-//         free_instructions_chaine(parsed_line->instructions_head);
-//         free(parsed_line);
-//         if (value) free(value);
-//         exit(1);
-//     }
-    
-//     if (value) free(value);
-    
-//     return parsed_line;
-// }
-
-
-
-parser_return* parser_func(char* line) {
-    parser_return* parsed_line = (parser_return*)malloc(sizeof(parser_return));
+PARSED_RETURN* parser_func(char* line) {
+    PARSED_RETURN* parsed_line = (PARSED_RETURN*)malloc(sizeof(PARSED_RETURN));
     // Initialize all fields
     if (parsed_line) {
         parsed_line->process_name[0] = '\0';
@@ -564,8 +261,8 @@ parser_return* parser_func(char* line) {
         exit(1);
     }
 
-    for(int i = 0; i <= line_length; i++) {  // Changed to <= to handle end of string
-        // Check if we reached a comma OR the end of string
+    for(int i = 0; i <= line_length; i++) {  // change it to <= because of end of file
+        // if the char is not ,
         if (i < line_length && line[i] != ',') {
             char_count++;
             char* value_temp = (char*)realloc(value, char_count + 1);
@@ -579,9 +276,9 @@ parser_return* parser_func(char* line) {
             value[char_count - 1] = line[i];
             value[char_count] = '\0';
         } 
-        else // We hit a comma OR end of string
+        else // , or end of string
         {
-            // Process the accumulated value
+            // check fields need_to_be_changed if fields changes
             if (value_number > 8) {
                 fprintf(stderr, "ERROR ON: parser function too many fields in line %s\n", line);
                 free(parsed_line);
@@ -589,29 +286,29 @@ parser_return* parser_func(char* line) {
                 exit(1);
             }
             
-            // Handle empty value (can happen with trailing comma)
-            if (char_count == 0) {
-                // Empty field - might be trailing comma, skip it
-                if (value_number >= 8) {
-                    // We have all required fields, ignore trailing empty field
-                    free(value);
-                    value = (char*)malloc(2);
-                    char_count = 0;
-                    value[0] = '\0';
-                    value_number++;
-                    continue;
-                } else if (value_number == 7) {
-                    // Empty arrival time field - set to 0
-                    parsed_line->unvalid_process_csv_check = false;
-                    parsed_line->temps_arrive = 0.0f;
-                    free(value);
-                    value = (char*)malloc(2);
-                    char_count = 0;
-                    value[0] = '\0';
-                    value_number++;
-                    continue;
-                }
-            }
+            // // need_to_be_deleted Handle empty value (can happen with trailing comma)
+            // if (char_count == 0) {
+            //     // Empty field - might be trailing comma, skip it
+            //     if (value_number >= 8) {
+            //         // We have all required fields, ignore trailing empty field
+            //         free(value);
+            //         value = (char*)malloc(2);
+            //         char_count = 0;
+            //         value[0] = '\0';
+            //         value_number++;
+            //         continue;
+            //     } else if (value_number == 7) {
+            //         // Empty arrival time field - set to 0
+            //         parsed_line->unvalid_process_csv_check = false;
+            //         parsed_line->temps_arrive = 0.0f;
+            //         free(value);
+            //         value = (char*)malloc(2);
+            //         char_count = 0;
+            //         value[0] = '\0';
+            //         value_number++;
+            //         continue;
+            //     }
+            // }
             
             switch (value_number) {
                 case 0:
@@ -663,7 +360,7 @@ parser_return* parser_func(char* line) {
                         free(value);
                         exit(1);
                     }
-                    insruction_parser_return* parsed_instructions = instruction_parser(value);
+                    INSTRUCTION_PARSED_RETURN* parsed_instructions = instruction_parser(value);
                     if (parsed_instructions == NULL || parsed_instructions->instructions_head == NULL) {
                         fprintf(stderr, "ERROR ON: parser line function, instruction_parser has returned a NULL value\n"); 
                         if (parsed_instructions) {
@@ -743,7 +440,6 @@ parser_return* parser_func(char* line) {
                     break;
                     
                 case 7:
-                    // This is the arrival time field
                     float temp_arrive = strtof(value, NULL);
                     parsed_line->temps_arrive = temp_arrive;
                     parsed_line->unvalid_process_csv_check = false; // last field is present and valid so valid process
@@ -756,48 +452,32 @@ parser_return* parser_func(char* line) {
                     fprintf(stderr, "ERROR ON: the parser function the value_number has exceded the number of columns in csv file (protocol: 8) current:%d\n", value_number);
                     exit(1);
             }
-            
-            // Reset for next field
+
+            // reset all for next field
             free(value);
             value = (char*)malloc(2);
             char_count = 0;
             value[0] = '\0';
             value_number++;
             
-            // If we're at the end of string, break
-            if (i == line_length) break;
+            // break if end of string
+            if (i == line_length) {
+                break;
+            } 
         }
-    }
-
-    // Check if we got all required fields (8 fields)
-    if (value_number < 8) {
-        fprintf(stderr, "ERROR ON: parser function incomplete line, got %d fields need 8\n", value_number);
-    }
-    if (value_number != 8) {
-        fprintf(stderr, "ERROR ON: parser function incomplete line, got %d fields but expected 8 in line: %s\n", value_number, line);
-        free_instructions_chaine(parsed_line->instructions_head);
-        free(parsed_line);
-        free(value);
-        exit(1);
-    }
-    
-    // parsed_line->unvalid_process_csv_check = false;    
-    if (value) {
-        free(value);
-    }
-    parsed_line->unvalid_process_csv_check = false;    
+    } 
 
     return parsed_line;
 }
 
 
 
-insruction_parser_return* instruction_parser(char* value) { // retrieve instruction name .. value is the instructions line
+INSTRUCTION_PARSED_RETURN* instruction_parser(char* value) { // retrieve instruction name .. value is the instructions line
     if (value[0] == '\0' || value[0] != '[') { // we already checked NULLTY, check string hadi jsp ida kan khawi to make sure and check instruction line satts with '['
         fprintf(stderr, "ERROR ON: instruction parser check the validity of instruction line\n");
         exit(1);
     }
-    insruction_parser_return* returned = (insruction_parser_return*)malloc(sizeof(insruction_parser_return));
+    INSTRUCTION_PARSED_RETURN* returned = (INSTRUCTION_PARSED_RETURN*)malloc(sizeof(INSTRUCTION_PARSED_RETURN));
     if (returned == NULL) {
         fprintf(stderr, "ERROR ON: instruction_parser function, dynamic allocation returned failed\n");
         exit(1);
@@ -843,7 +523,7 @@ insruction_parser_return* instruction_parser(char* value) { // retrieve instruct
             instruction[3] = '\0';
 
             // check if the ressource is a known ressource
-            if (check_known_ressource(instruction) == false) {
+            if (check_known_ressource(instruction) == TASK_ERR) {
                 fprintf(stderr, "ERROR ON: instruction_parser failed at line %s\ninstruction %s is not allowed", value, instruction);
                 free(new_node);
                 free_instructions_chaine(returned->instructions_head); // liberer memoire
@@ -854,7 +534,7 @@ insruction_parser_return* instruction_parser(char* value) { // retrieve instruct
             // increase the instructions_count by 1
             returned->count++;
 
-            // Initialize new node
+            // init node
             new_node->state = NOT_STARTED;
             new_node->next = NULL;
             
@@ -895,18 +575,18 @@ insruction_parser_return* instruction_parser(char* value) { // retrieve instruct
             instruction[3] = '\0';
 
             // check if the ressource is a known ressource
-            if (check_known_ressource(instruction) == false) {
+            if (check_known_ressource(instruction) == TASK_ERR) {
                 fprintf(stderr, "ERROR ON: instruction_parser failed at line %s\ninstruction %s is not allowed", value, instruction);
                 free(new_node);
                 free_instructions_chaine(returned->instructions_head); // liberer memoire
                 free(returned);
                 exit(1);
             }
-            
+
             // increase the instructions_count by 1
             returned->count++;
 
-            // Initialize new node
+            // init node
             new_node->state = NOT_STARTED;
             new_node->next = NULL;
             
@@ -940,7 +620,7 @@ insruction_parser_return* instruction_parser(char* value) { // retrieve instruct
             exit(1);
         }
     }
-    
+
     // at least one instruction if list not empty
     if (value[1] != ']' && returned->count == 0) {
         fprintf(stderr, "ERROR ON: instruction_parser no instructions found in non-empty list\n");
@@ -948,103 +628,7 @@ insruction_parser_return* instruction_parser(char* value) { // retrieve instruct
         free(returned);
         exit(1);
     }
+
     
     return returned;
 }
-
-
-
-// old without chained list 
-// insruction_parser_return* instruction_parser(char* value) { // retrieve instruction name .. value is the instructions line
-//     if (value[0] == '\0' || value[0] != '[') { // we already checked NULLTY, check string hadi jsp ida kan khawi to make sure and check instruction line satts with '['
-//         fprintf(stderr, "ERROR ON: instruction parser check the validity of instruction line\n");
-//         exit(1);
-//     }
-//     insruction_parser_return* returned = (insruction_parser_return*)malloc(sizeof(insruction_parser_return));
-//     if (returned == NULL) {
-//         fprintf(stderr, "ERROR ON: instruction_parser function, dynamic allocation returned failed\n");
-//         exit(1);
-//     }
-
-//     returned->instructions = (char**)malloc(20000 * sizeof(char*)); // 20000 instruction each instruction is a pointer to a string and has exactly 3caracters
-//     if (returned->instructions == NULL) {
-//         free(returned); // leakmemory eskive
-//         fprintf(stderr, "ERROR ON: instruction_parser function, dynamic allocation returned->instructions failed\n");
-//         exit(1);
-//     }
-
-//     returned->count = 0;
-//     char instruction[4] = {0}; // initializing it to prevent random value
-
-//     int instruction_char_count = 0;
-//     for (int i = 1; i < 60001; i++) {// instructions_count // initializing i to 1 bach na9zo hadak '['
-//         if (value[i] != ',' && instruction_char_count < 3) { // if value is a ressource character and we didnt arrive to the end which is 3characters
-//             instruction[instruction_char_count] = value[i]; // character at instruction retriving variable = fgets or instructions line char
-//             instruction_char_count++;
-//         } else if (value[i] == ',' && instruction_char_count == 3) { // if tge char in instructions line is comma and instruction_char_count is 3 mean that valid instruction variable so we have a ressource
-//             if (instruction_char_count != 3) { // ressource is more than 3 characters
-//                 // "concurrence bagha la vendetta"
-//                 fprintf(stderr, "ERROR ON: instruction_parser failed at line %s\nan instruction %s with length %d is more than allowed", value, instruction, instruction_char_count);
-//                 free(returned->instructions); // liberer memoire
-//                 free(returned); // liberer memoire
-//                 exit(1);
-//             }
-//             returned->instructions[returned->count] = (char*)malloc(4 * sizeof(char));// chwiiiiiiiya 3la lbufferoverflow, 3 + \0 null terminator
-//             if (returned->instructions[returned->count] == NULL) {
-//                 fprintf(stderr, "ERROR ON: instruction_parser failed allocating the instruction\n");
-//                 free(returned->instructions);
-//                 free(returned);
-//                 exit(1);
-//             }
-//             instruction[3] = '\0';
-
-//             // check if the ressource is a known ressource
-//             if (check_known_ressource(instruction) == false) {
-//                 fprintf(stderr, "ERROR ON: instruction_parser failed at line %s\ninstruction %s is not allowed", value, instruction);
-//                 free(returned->instructions);
-//                 free(returned);
-//                 exit(1);
-//             }
-
-//             strcpy(returned->instructions[returned->count], instruction); // copy the string to the allocated instruction but if the instruction is not ended with \0 strcpy will copy more exceeding the buffer
-//             returned->instructions[returned->count][3] = '\0';
-//             returned->count++;
-//             instruction_char_count = 0;
-//             instruction[0] = '\0'; // clearing the array
-//         } else if (value[i] == ']' || value[i] == '\0') { // didnt merge it with previous if for time, like ida zedt wahed l if (value[i] == ']')  ghayexecuteha bzf which is bad
-//             if (instruction_char_count != 3) { // ressource is more than 3 characters
-//                 // "concurrence bagha la vendetta"
-//                 fprintf(stderr, "ERROR ON: instruction_parser failed at line %s\nan instruction %s with length %d is more than allowed", value, instruction, instruction_char_count);
-//                 free(returned->instructions); // liberer memoire
-//                 free(returned); // liberer memoire
-//                 exit(1);
-//             }
-//             returned->instructions[returned->count] = (char*)malloc(4 * sizeof(char));// chwiiiiiiiya 3la lbufferoverflow, 3 + \0 null terminator
-//             if (returned->instructions[returned->count] == NULL) {
-//                 fprintf(stderr, "ERROR ON: instruction_parser failed allocating the instruction\n");
-//                 free(returned->instructions);
-//                 free(returned);
-//                 exit(1);
-//             }
-//             instruction[3] = '\0';
-//             strcpy(returned->instructions[returned->count], instruction); // copy the string to the allocated instruction
-//             returned->count++;
-//             break; // instead of setting char count to 0 break the loop and return the parsed instructions
-//         } else if (i == 60000) { // that why we make 60001 in the condition
-//             fprintf(stderr, "ERROR ON: instruction_parser the ] ending instruction never found\n");
-//             free(returned->instructions);
-//             free(returned);
-//             exit(1);
-//         } else {
-//             fprintf(stderr, "ERROR ON: instruction_parser function process line in csv \n '%s' unvalid instruction with unknwon error\n", value);
-//             // free the instructions then the list then returned
-//             for (int i = 0; i < returned->count; i++) {
-//                 free(returned->instructions[i]);
-//             }
-//             free(returned->instructions);
-//             free(returned);
-//             exit(1);
-//         }
-//     }
-//     return returned;
-// }

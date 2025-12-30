@@ -5,7 +5,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <unistd.h>
-#include <math.h>  // Add this at the top of your file
+#include <math.h>  // add this at the top of your file
 #include <limits.h>  // For INT_MIN, INT_MAX
 
 #include "../../lib/structs/execution_queue.h"
@@ -17,6 +17,10 @@
 #include "../../lib/structs/ressource_manager.h"
 
 #include "../../src/implementation/execution_queue.c"
+#include "../../src/implementation/schedular_algos.c"
+#include "../../src/implementation/schedular_out.c"
+
+#include "../../src/implementation/output.c"
 
 ORDONNANCEUR_STATISTICS* op_create_statistics() {   
 
@@ -43,44 +47,48 @@ EXECUTION_QUEUE* op_create_execution_queue() {
 
 
 // ordonnanceur to simulator
-bool op_need_ressources(ORDONNANCEUR* self, RESSOURCE_ELEMENT* ressource_needed) {
-    bool response = self->need_ressources(ressource_needed);
-
-    return response;
-}
-
-bool op_ressource_is_free(ORDONNANCEUR* self, RESSOURCE ressource) {
-    bool response = self->simulator->signal_ressource_is_free(self->simulator, ressource);
-
-    return response;
-}
-
-bool op_update_cpu_time_used(ORDONNANCEUR* self, float inc) {
-    // bool response = process->update_cpu_time_used(process, inc);
-    bool response = self->simulator->update_cpu_time_used(self->exec_proc, inc);
-
-
-    return response;
-}
-
-bool op_update_process(ORDONNANCEUR* self,PCB* process, float *temps_fin, float *tournround) {
+TASK op_need_ressources(ORDONNANCEUR* self, RESSOURCE_ELEMENT* ressource_needed) {
     
-    return self->simulator->update_process(self->simulator, process, temps_fin, tournround);
+    return self->need_ressources(ressource_needed);
+
+}
+
+TASK op_ressource_is_free(ORDONNANCEUR* self, RESSOURCE ressource) {
+    
+    return self->simulator->signal_ressource_is_free(self->simulator, ressource);
+
+}
+
+TASK op_update_cpu_time_used(ORDONNANCEUR* self, float inc) {
+
+    return self->simulator->update_cpu_time_used(self->exec_proc, inc);
+
+}
+
+TASK op_update_process(ORDONNANCEUR* self,PCB* process, float *temps_fin, float *tournround) {
+    
+    printf("DEBUG: op_update_process called with temps_fin %p\n", temps_fin);
+    fflush(stdout);
+    return self->simulator->process_manager->update_process(self->simulator->process_manager, process, temps_fin, tournround);
     
 }
 
-bool op_ask_sort_rt(ORDONNANCEUR* schedular) {
+TASK op_ask_sort_rt(ORDONNANCEUR* self) {
 
-    bool response = schedular->simulator->ask_sort_rt(schedular->simulator);
+    return self->simulator->ask_sort_rt(self->simulator);
 
-    return response;
 }
 
-bool op_ask_sort_priority(SIMULATOR* simulator) {
+TASK op_ask_sort_priority(ORDONNANCEUR* self) {
 
-    bool response = simulator->ask_sort_priority(simulator);
+    return self->simulator->ask_sort_priority(self->simulator);
+    
+}
 
-    return response;
+
+TASK op_ask_sort_sjf(ORDONNANCEUR* self) {
+
+    return self->simulator->ask_sort_sjf(self->simulator);
 }
 
 PCB* op_sched_ask_for_next_ready_element(ORDONNANCEUR* self, PCB* current_pcb) {
@@ -91,49 +99,28 @@ PCB* op_sched_ask_for_next_ready_element(ORDONNANCEUR* self, PCB* current_pcb) {
 }
 
 
-bool op_check_ressource_disponibility(ORDONNANCEUR* self, RESSOURCE ressource) {
+TASK op_check_ressource_disponibility(ORDONNANCEUR* self, RESSOURCE ressource) {
 
-    bool result = self->simulator->check_ressource_disponibility(self->simulator, ressource);
+    return self->simulator->check_ressource_disponibility(self->simulator, ressource);
 
-    return result;
 }
-
-// // process_manager & schedular related function
-// bool op_check_ressource_disponibility(SIMULATOR* self, RESSOURCE ressource_needed) {
-
-//     bool response = self->ressource_manager->check_if_ressource_available(ressource_needed);
-
-//     return response;
-// }
 
 
 // update statistics
-bool op_update_schedular_statistics(ORDONNANCEUR* self, float* exec_time, float* burst, float* temp_attente, bool finished) { // must check nullty
-
-    if (finished == true) {
-        
-            self->statistics->processus_termine_count++;
-            self->statistics->cpu_total_temps_usage += *exec_time;
-            self->statistics->total_turnround += *burst;
-            self->statistics->troughtput = (float)self->statistics->processus_termine_count / self->statistics->total_turnround;
-            self->statistics->total_temps_attente += *temp_attente;
-
-    } else {
-
-            self->statistics->context_switch++;
-            self->statistics->cpu_total_temps_usage += *exec_time;
-    }
-    
-    return true;
-}
 
 
 WORK_RETURN sched_kill(ORDONNANCEUR* self) {
 
-    printf("execution_queue hit killed\n\n\n");
-
+    // Free execution segments
+    EXECUTION_SEGMENT* current = self->execution_segments_head;
+    while (current != NULL) {
+        EXECUTION_SEGMENT* next = current->next;
+        free(current);
+        current = next;
+    }
 
     free(self->statistics);
+
     
     if (self->execution_queue->kill(self->execution_queue) != WORK_DONE) {
 
@@ -148,6 +135,8 @@ WORK_RETURN sched_kill(ORDONNANCEUR* self) {
 
     return WORK_DONE;
 }
+
+
 
 PCB* op_sched_get_ready_queue_head(ORDONNANCEUR* self) {
     return self->simulator->simul_get_ready_queue_head(self->simulator);
@@ -184,7 +173,7 @@ sched_ressources_return op_check_ressources(ORDONNANCEUR* self, PCB* exec_proc) 
     // Check all resources first
     bool resources_available = true;
     for (int i = 0; i < ressource_count; i++) {
-        if (self->check_ressource_disponibility(self, ressources[i]) == false) {
+        if (self->check_ressource_disponibility(self, ressources[i]) == TASK_ERR) {
             resources_available = false;
             break;  // Exit early if any resource is unavailable
         }
@@ -203,525 +192,16 @@ sched_ressources_return op_check_ressources(ORDONNANCEUR* self, PCB* exec_proc) 
     return RESSOURCES_AVAILABLE;
 }
 
-bool op_sched_update_process_manager(struct ORDONNANCEUR* self, float temps) {
+TASK op_sched_update_process_manager(struct ORDONNANCEUR* self, float temps, float* runed) {
 
-    return self->simulator->simul_update_process_manager(self->simulator, NULL, &temps); // NULL because of file buffer we wont use it here
+    return self->simulator->simul_update_process_manager(self->simulator, NULL, &temps, runed); // NULL because of file buffer we wont use it here
 }
 
-WORK_RETURN select_rr(ORDONNANCEUR* self, float quantum) {
 
-    float max_arrival_time = self->get_max_arrival_time(self);
+TASK op_sched_remove_from_ready_queue(ORDONNANCEUR* self, PCB* pcb, float completion_time) {
+    return self->simulator->remove_from_ready_queue(self->simulator, pcb, completion_time);
 
-    float temps = 0;
-    float proc_temps = 0;
-
-    printf("hiiiiiit select_rr\n\n\n");
-
-    do {
-
-        printf("\n----temps %f\n", temps);
-        printf("----temps %f\n", proc_temps);
-    
-        self->exec_proc = self->sched_ask_for_next_ready_element(self, self->exec_proc); // get the next element
-
-        print_pcb(self->exec_proc);
-
-        if (self->exec_proc  != NULL) {
-
-            // check ressources
-            switch (self->check_ressources(self, self->exec_proc)) {
-                case PROCESS_BLOCKED:
-                    continue;
-                case PROCESS_ERROR:
-                    return WORK_ERROR;
-                case RESSOURCES_AVAILABLE:
-                    break;
-                default:
-                    return WORK_ERROR;
-            }
-
-            float time_to_execute;
-            if (self->exec_proc->remaining_time < quantum) {
-                if (self->exec_proc->remaining_time < 0.00001f) 
-                    time_to_execute = 0.00001f;            
-                else
-                    time_to_execute = self->exec_proc->remaining_time;
-            } else {
-                time_to_execute = quantum;
-            }
-
-            // Ensure minimum execution time
-            if (time_to_execute < 0.00001f) {
-                time_to_execute = 0.00001f;
-            }
-
-            if (self->execution_queue->execute_rr(time_to_execute) != WORK_DONE) { // if remaining time is less than the quantum then execute for remaining time not quantum else execute for quantum
-                return WORK_ERROR;
-            }
-
-            time_t daba;
-            time_t* temps_fin_ptr = NULL;
-            float time_used; // Variable to track actual time used
-
-            if (time_to_execute < quantum) {
-
-                temps += time_to_execute;
-
-
-                float n_quantum = time_to_execute;
-                time_used = n_quantum; // Use the actual remaining time
-                
-                time(&daba);
-                temps_fin_ptr = &daba;
-
-                // Pass n_quantum instead of quantum
-                process_update update = self->update_process(self, self->exec_proc, temps_fin_ptr, &n_quantum);
-                
-                if (update != UPDATED) {
-                    return UPDATE_ERROR;
-                }
-
-                if (
-                    self->update_schedular_statistics(self, &n_quantum, &self->exec_proc->burst_time, &self->exec_proc->statistics->temps_attente, true) != true // changed not good
-                ) {
-                    return UPDATE_ERROR;
-                }
-                
-            } else {
-
-                temps += quantum;
-
-                time_used = quantum; // Use the full quantum
-                
-                process_update update = self->update_process(self, self->exec_proc, temps_fin_ptr, &quantum);
-
-                if (update != UPDATED) {
-                    return UPDATE_ERROR;
-                }
-
-                if (
-                    self->update_schedular_statistics(self, &quantum, NULL, NULL, false) != true // changed not good
-                ) {
-                    return UPDATE_ERROR;
-                }
-
-            }
-
-        }
-
-        // should update temps arrive
-
-        if ((float)(int)temps > proc_temps) {// get floor like 1.2365 -> 1.0000
-
-            proc_temps = (float)(int)temps;
-
-            printf("ppppppppppppp %f", proc_temps);
-
-            if (self->sched_update_process_manager(self, proc_temps) == false) {
-
-                fprintf(stderr, "ERROR ON: sched_update_process_manager failed\n");
-                return UPDATE_ERROR;
-            
-            } else {
-
-                printf("########## hit update readu_queue\n");
-                if (proc_temps <= max_arrival_time) { // update only if max remaining time is inferior or equal to max arrival time, for time consuming
-                    if (self->update_ready_queue(self, true) == false) {
-                        fprintf(stderr, "ERROR ON: update_ready_queue failed\n");
-                        return UPDATE_ERROR;
-                    }
-                }
-            }
-        }
-
-    } while (self->exec_proc != NULL);
-
-    // print_pcb_chaine(self->simulator->process_manager->process_table_head);
-
-    if (temps >= max_arrival_time) {
-        printf("Scheduler terminated: All processes completed\n");
-    } else {
-        printf("Scheduler terminated early (time: %.1f, max arrival: %.1f)\n", 
-        temps, max_arrival_time);
-    }
-
-    return WORK_DONE;
 }
-
-WORK_RETURN select_srtf(ORDONNANCEUR* self, float quantum) {
-    float max_arrival_time = self->get_max_arrival_time(self);
-    float temps = 0;
-    float proc_temps = 0;  // Last integer time we processed
-
-    quantum = 1.0f;
-    
-    printf("Starting SRTF scheduler\n");
-
-    do {
-        // Check if we've passed an integer boundary
-        if ((int)temps > (int)proc_temps && temps <= max_arrival_time) {
-            proc_temps = (float)(int)temps;
-            
-            printf("\n=== Time %.0f: Checking for new arrivals ===\n", proc_temps);
-            
-            if (self->sched_update_process_manager(self, proc_temps) == false) {
-                fprintf(stderr, "ERROR: sched_update_process_manager failed\n");
-                return UPDATE_ERROR;
-            }
-
-            // Update ready queue with new arrivals
-            if (self->update_ready_queue(self, false) == false) {
-                fprintf(stderr, "ERROR: update_ready_queue failed\n");
-                return UPDATE_ERROR;
-            }
-
-            // CRITICAL: Sort by remaining time after new arrivals
-            if (self->ask_sort_rt(self) == false) {
-                fprintf(stderr, "ERROR: ask_sort_rt failed\n");
-                return UPDATE_ERROR;
-            }
-        }
-        
-        // Get process with shortest remaining time
-        self->exec_proc = self->sched_get_ready_queue_head(self);
-        
-        if (self->exec_proc != NULL) {
-            printf("\nRunning PCB %d at time %f (remaining: %f)\n",
-                   self->exec_proc->pid, temps, self->exec_proc->remaining_time);
-            
-            // Check resources
-            switch (self->check_ressources(self, self->exec_proc)) {
-                case PROCESS_BLOCKED:
-                    printf("PCB %d blocked, skipping\n", self->exec_proc->pid);
-                    // Remove blocked process from ready queue
-                    if (self->ask_sort_rt(self) == false) {  // Re-sort after removal
-                        fprintf(stderr, "ERROR: ask_sort_rt failed after blocking\n");
-                        return UPDATE_ERROR;
-                    }
-                    continue;
-                case PROCESS_ERROR:
-                    return WORK_ERROR;
-                case RESSOURCES_AVAILABLE:
-                    break;
-                default:
-                    return WORK_ERROR;
-            }
-            
-            // Calculate run time: min(quantum, remaining, time_to_next_integer)
-            float time_to_next_int = ceilf(temps) - temps;
-            float run_time = self->exec_proc->remaining_time;
-            
-            if (run_time > quantum) run_time = quantum;
-            if (run_time > time_to_next_int && time_to_next_int > 0.0001f) {
-                run_time = time_to_next_int;
-            }
-            
-            printf("Executing for %f time units\n", run_time);
-            
-            // Execute
-            if (self->execution_queue->execute_srtf(run_time) != WORK_DONE) {
-                return WORK_ERROR;
-            }
-
-            // Update time
-            temps += run_time;
-            
-            // Save PID before updating (in case process is freed)
-            int current_pid = self->exec_proc->pid;
-            
-            // Check if process completed
-            float new_remaining = self->exec_proc->remaining_time - run_time;
-            bool completed = (new_remaining <= 0.00001f);
-
-            // Save stats for statistics update if completed (because PCB will be freed)
-            float burst_time = 0;
-            float temps_attente = 0;
-            if (completed) {
-                burst_time = self->exec_proc->burst_time;
-                // Calculate temps_attente manually as we can't access PCB after free
-                float temps_arrive = self->exec_proc->statistics->temps_arrive;
-                temps_attente = (temps - temps_arrive) - burst_time;
-            }
-
-            time_t daba;
-            time(&daba);
-
-            
-            // Update process. Only pass &daba (temps_fin) if completed.
-            process_update update = self->update_process(self, self->exec_proc, 
-                                                        completed ? &daba : NULL, &run_time);
-            if (update != UPDATED) {
-                return UPDATE_ERROR;
-            }
-            
-            // Update statistics
-            if (self->update_schedular_statistics(self, &run_time, 
-                completed ? &burst_time : NULL,
-                completed ? &temps_attente : NULL,
-                completed) != true) {
-                return UPDATE_ERROR;
-            }
-            
-            if (completed) {
-                printf("PCB %d completed at time %f\n", current_pid, temps);
-                // When process completes, it's removed from ready queue
-                // We need to re-sort for the next iteration
-                self->exec_proc = NULL;  // Clear current execution pointer
-            } else {
-                // Process not completed - remaining_time changed, need to re-sort
-
-                if (self->ask_sort_rt(self) == false) {
-                    fprintf(stderr, "ERROR: ask_sort_rt failed after partial execution\n");
-                    return UPDATE_ERROR;
-                }
-                printf("here\n");
-            }
-            
-        } else {
-            // No ready process, advance to next integer time
-            int next_int_time = (int)temps + 1;
-            if (next_int_time <= max_arrival_time) {
-                temps = (float)next_int_time;
-                printf("No ready processes, advancing to time %f\n", temps);
-            } else {
-                break;  // No more arrivals expected
-            }
-        }
-        
-    } while (1);  // Changed to infinite loop, break when done
-    
-    printf("\nSRTF scheduler finished at time %f\n", temps);
-    return WORK_DONE;
-}
-
-// WORK_RETURN select_srtf(ORDONNANCEUR* self, float quantum) {
-
-//     float max_arrival_time = self->get_max_arrival_time(self);
-//     float temps = 0;
-//     float proc_temps = 0;  // Last integer time we processed
-    
-//     printf("Starting SRTF scheduler\n");
-
-//     do {
-//         // Check if we've passed an integer boundary
-//         if ((int)temps > (int)proc_temps && temps <= max_arrival_time) {
-//             proc_temps = (float)(int)temps;
-            
-//             printf("\n=== Time %.0f: Checking for new arrivals ===\n", proc_temps);
-            
-//             if (self->sched_update_process_manager(self, proc_temps) == false) {
-//                 fprintf(stderr, "ERROR: sched_update_process_manager failed\n");
-//                 return UPDATE_ERROR;
-//             }
-
-//             // Update ready queue with new arrivals
-//             if (self->update_ready_queue(self, false) == false) {
-//                 fprintf(stderr, "ERROR: update_ready_queue failed\n");
-//                 return UPDATE_ERROR;
-//             }
-
-            
-//             // CRITICAL: Sort by remaining time after new arrivals
-//             if (self->ask_sort_rt(self) == false) {
-//                 fprintf(stderr, "ERROR: ask_sort_rt failed\n");
-//                 return UPDATE_ERROR;
-//             }
-//         }
-        
-//         // Get process with shortest remaining time
-//         self->exec_proc = self->sched_get_ready_queue_head(self); // always get the head because it's sorted 
-
-//         print_pcb(self->exec_proc);
-        
-//         if (self->exec_proc != NULL) {
-//             printf("\nRunning PCB %d at time %f (remaining: %f)\n",
-//                    self->exec_proc->pid, temps, self->exec_proc->remaining_time);
-            
-//             // Check resources
-//             switch (self->check_ressources(self, self->exec_proc)) {
-//                 case PROCESS_BLOCKED:
-//                     printf("PCB %d blocked, skipping\n", self->exec_proc->pid);
-//                     continue;
-//                 case PROCESS_ERROR:
-//                     return WORK_ERROR;
-//                 case RESSOURCES_AVAILABLE:
-//                     break;
-//                 default:
-//                     return WORK_ERROR;
-//             }
-            
-//             // Calculate run time: min(quantum, remaining, time_to_next_integer)
-//             // float quantum = 1.0f;
-//             float time_to_next_int = ceilf(temps) - temps;
-//             float run_time = self->exec_proc->remaining_time;
-            
-//             if (run_time > quantum) run_time = quantum;
-//             if (run_time > time_to_next_int && time_to_next_int > 0.0001f) {
-//                 run_time = time_to_next_int;
-//             }
-            
-//             printf("Executing for %f time units\n", run_time);
-            
-//             // Execute
-//             if (self->execution_queue->execute_srtf(run_time) != WORK_DONE) {
-//                 return WORK_ERROR;
-//             }
-            
-//             // Update time
-//             temps += run_time;
-            
-//             // Update process
-//             time_t daba;
-//             time(&daba);
-//             process_update update = self->update_process(self, self->exec_proc, 
-//                                                         &daba, &run_time);
-//             if (update != UPDATED) {
-//                 return UPDATE_ERROR;
-//             }
-            
-//             // Update statistics
-//             bool completed = (self->exec_proc->remaining_time <= 0.000001f);
-//             if (self->update_schedular_statistics(self, &run_time, 
-//                 completed ? &self->exec_proc->burst_time : NULL,
-//                 completed ? &self->exec_proc->statistics->temps_attente : NULL,
-//                 completed) != true) {
-//                 return UPDATE_ERROR;
-//             }
-            
-//             if (completed) {
-//                 printf("PCB %d completed at time %f\n", self->exec_proc->pid, temps);
-//             }
-            
-//         } else {
-//             // No ready process, advance to next integer time
-//             int next_int_time = (int)temps + 1;
-//             if (next_int_time <= max_arrival_time) {
-//                 temps = (float)next_int_time;
-//                 printf("No ready processes, advancing to time %f\n", temps);
-//             } else {
-//                 break;  // No more arrivals expected
-//             }
-//         }
-        
-//     } while (self->exec_proc != NULL);
-    
-//     printf("\nSRTF scheduler finished at time %f\n", temps);
-//     return WORK_DONE;
-// }
-
-
-
-
-// WORK_RETURN select_srtf(ORDONNANCEUR* self, float quantum) {
-//     float max_arrival_time = self->get_max_arrival_time(self);
-//     float temps = 0;
-//     float proc_temps = 0;  // Last integer time we processed
-    
-//     printf("Starting SRTF scheduler\n");
-
-//     do {
-//         // Check if we've passed an integer boundary
-//         if ((int)temps > (int)proc_temps) {
-//             proc_temps = (float)(int)temps;
-            
-//             printf("\n=== Time %.0f: Checking for new arrivals ===\n", proc_temps);
-            
-//             if (self->sched_update_process_manager(self, proc_temps) == false) {
-//                 fprintf(stderr, "ERROR: sched_update_process_manager failed\n");
-//                 return UPDATE_ERROR;
-//             }
-//             // Update ready queue with new arrivals
-//             if (self->update_ready_queue(self, false) == false) {
-//                 fprintf(stderr, "ERROR: update_ready_queue failed\n");
-//                 return UPDATE_ERROR;
-//             }
-            
-//             // CRITICAL: Sort by remaining time after new arrivals
-//             if (self->ask_sort_rt(self) == false) {
-//                 fprintf(stderr, "ERROR: ask_sort_rt failed\n");
-//                 return UPDATE_ERROR;
-//             }
-//         }
-        
-//         // Get process with shortest remaining time
-//         self->exec_proc = self->sched_ask_for_next_ready_element(self, self->exec_proc);
-        
-//         if (self->exec_proc != NULL) {
-//             printf("\nRunning PCB %d at time %f (remaining: %f)\n",
-//                    self->exec_proc->pid, temps, self->exec_proc->remaining_time);
-            
-//             // Check resources
-//             switch (self->check_ressources(self, self->exec_proc)) {
-//                 case PROCESS_BLOCKED:
-//                     printf("PCB %d blocked, skipping\n", self->exec_proc->pid);
-//                     continue;
-//                 case PROCESS_ERROR:
-//                     return WORK_ERROR;
-//                 case RESSOURCES_AVAILABLE:
-//                     break;
-//                 default:
-//                     return WORK_ERROR;
-//             }
-            
-//             // Calculate run time: min(quantum, remaining, time_to_next_integer)
-//             float quantum = 0.02f;
-//             float time_to_next_int = ceilf(temps) - temps;
-//             float run_time = self->exec_proc->remaining_time;
-            
-//             if (run_time > quantum) run_time = quantum;
-//             if (run_time > time_to_next_int && time_to_next_int > 0.0001f) {
-//                 run_time = time_to_next_int;
-//             }
-            
-//             printf("Executing for %f time units\n", run_time);
-            
-//             // Execute
-//             if (self->execution_queue->execute_srtf(run_time) != WORK_DONE) {
-//                 return WORK_ERROR;
-//             }
-            
-//             // Update time
-//             temps += run_time;
-            
-//             // Update process
-//             time_t daba;
-//             time(&daba);
-//             process_update update = self->update_process(self, self->exec_proc, 
-//                                                         &daba, &run_time);
-//             if (update != UPDATED) {
-//                 return UPDATE_ERROR;
-//             }
-            
-//             // Update statistics
-//             bool completed = (self->exec_proc->remaining_time <= 0.000001f);
-//             if (self->update_schedular_statistics(self, &run_time, 
-//                 completed ? &self->exec_proc->burst_time : NULL,
-//                 completed ? &self->exec_proc->statistics->temps_attente : NULL,
-//                 completed) != true) {
-//                 return UPDATE_ERROR;
-//             }
-            
-//             if (completed) {
-//                 printf("PCB %d completed at time %f\n", self->exec_proc->pid, temps);
-//             }
-            
-//         } else {
-//             // No ready process, advance to next integer time
-//             int next_int_time = (int)temps + 1;
-//             if (next_int_time <= max_arrival_time) {
-//                 temps = (float)next_int_time;
-//                 printf("No ready processes, advancing to time %f\n", temps);
-//             } else {
-//                 break;  // No more arrivals expected
-//             }
-//         }
-        
-//     } while (temps < max_arrival_time);
-    
-//     printf("\nSRTF scheduler finished at time %f\n", temps);
-//     return WORK_DONE;
-// }
-
 
 
 push_return op_sched_push_to_blocked_queue(ORDONNANCEUR* self, PCB* pcb) {
@@ -733,7 +213,7 @@ float op_sched_get_max_arrival_time(ORDONNANCEUR* self) {
     return self->simulator->get_max_arrival_time(self->simulator);
 }
 
-bool op_sched_update_ready_queue(ORDONNANCEUR* self, bool circular) {
+TASK op_sched_update_ready_queue(ORDONNANCEUR* self, bool circular) {
     return self->simulator->update_ready_queue(self->simulator, circular);
 }
 
@@ -755,17 +235,30 @@ ORDONNANCEUR* op_sched_init(ORDONNANCEUR* self, SIMULATOR* simulator, OPTIONS* o
     self->kill = sched_kill;
     self->sched_push_to_blocked_queue = op_sched_push_to_blocked_queue;
     self->sched_get_ready_queue_head = op_sched_get_ready_queue_head;
-    self->check_ressources = op_check_ressources;
     self->sched_update_process_manager = op_sched_update_process_manager;
     self->get_max_arrival_time = op_sched_get_max_arrival_time;
     self->update_ready_queue = op_sched_update_ready_queue;
+    self->ask_sort_sjf = op_ask_sort_sjf;
+    self->remove_from_ready_queue = op_sched_remove_from_ready_queue;
     
     switch (options->algorithm) {
         case 0:
             self->select = select_rr;
             break;
         case 1:
+            self->select = select_fcfs;
+            break;
+        case 2:
             self->select = select_srtf;
+            break;
+        case 3:
+            self->select = select_ppp;
+            break;
+        case 4:
+            self->select = select_ppn;
+            break;
+        case 5:
+            self->select = select_sjf;
             break;
     }
 
@@ -792,6 +285,9 @@ ORDONNANCEUR* op_sched_init(ORDONNANCEUR* self, SIMULATOR* simulator, OPTIONS* o
     self->execution_queue->init = ex_init;
 
     self->execution_queue->init(self->execution_queue);
+
+    self->execution_segments_head = NULL;
+    self->current_segment = NULL;
 
     return self;
 }

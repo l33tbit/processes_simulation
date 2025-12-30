@@ -1,96 +1,33 @@
+#pragma once
 
 
-// #pragma once
-
-// #include <time.h>
-// #include <stdbool.h>
-// #include <stdio.h>
-
-// #include "../../lib/structs/process.h"
+#include "../../lib/structs/process.h" 
+#include <time.h>
+#include <stdbool.h>
+#include "../../lib/structs/ressource.h" // for ressource enum
 
 
-// bool op_update_temps_creation(PCB* self, struct tm temps_creation) {
-//     if (self == NULL) {
-//         return NULL;
-//     }
-//     struct tm temps_arrive;
-//     time_t now = mktime(&temps_arrive);
+void op_free_pcb_pcb(PCB* pcb_copy) {
 
-//     self->statistics->temps_creation = now;
-//     return true;
-// }
-
-// bool op_update_temps_arrive(PCB* self, struct tm temps_arrive) {
-//     if (self == NULL || self->statistics == NULL) {
-//         printf("ERROR ON: op_update_temps_arrive (NULL value)\n");
-//         return false;
-//     }
-//     time_t arrive = mktime(&temps_arrive);
-//     self->statistics->temps_arrive = arrive;
-//     return true;
-// }
-
-// bool op_update_temps_fin(PCB* self, struct tm temps_fin) { // updating temps_fin = market_terminated = update_turnround
-//     if (self == NULL || self->statistics == NULL) {
-//         printf("ERROR ON: op_update_temps_fin (NULL value)\n");
-//         return false;
-//     }
-
-//     time_t fin = mktime(&temps_fin);
-//     self->statistics->temps_fin = fin;
+    if (pcb_copy == NULL) return; // prevent bug of freeing null
     
-//     // the soustraction
 
-//     self->statistics->tournround = difftime(self->statistics->temps_fin, self->statistics->temps_arrive);
-//     self->etat = TERMINATED;
-//     return true;
-// }
-
-// bool op_cpu_time_used(PCB* self, float cpu_temps_used) { // updating cpu_temps_used = updating_remaining_time
-//     if (self == NULL) {
-//         printf("ERROR ON: op_cpu_time_used (NULL value)\n");
-//         return false;
-//     }
-//     self->cpu_time_used += cpu_temps_used;
-//     return true;
-// }
-
-// bool op_update_temps_attente(PCB* self, float temps_attente) {
-//     if (self == NULL || temps_attente == 0) {
-//         printf("ERROR ON: op_update_waiting_time (NULL value)\n");
-//         return false;
-//     }
-//     self->statistics->temps_attente += temps_attente;
-//     return true;
-// }
-
-// PCB* op_pcb_define_next(PCB* self, PCB* next) {
-//     if (self == NULL || next == NULL)
-//         return NULL;
     
-//     self->pid_sibling_next = next;
-//     return self;
-// }
+    // free the instructions also
+    INSTRUCTION* current_instr = pcb_copy->instructions_head;
 
-// PCB* op_pcb_define_previous(PCB* self, PCB* previous) {
-//     if (self == NULL || previous == NULL)
-//         return NULL;
-//     self->pid_sibling_previous = previous;
-//     return self;
-// }
+    while (current_instr != NULL) {
+        INSTRUCTION* next_instr = current_instr->next;
+        free(current_instr);
+        current_instr = next_instr;
+    }
+    
+    // free also statistics
+    if (pcb_copy->statistics != NULL) {
+     
+        free(pcb_copy->statistics);
+    }
+    
+    free(pcb_copy);
+}
 
-// bool op_mark_instruction_terminated(PCB* self, INSTRUCTION* instruction) {
-//     if (self == NULL || instruction == NULL)
-//         return NULL;
-
-//     self->current_instruction->state = COMPLETED;
-//     return self;
-// }
-
-// PCB* op_get_next_pcb(PCB* pcb) {
-//     return pcb->pid_sibling_next;
-// }
-
-// PCB* op_pid_sibling_previous(PCB* pcb) {
-//     return pcb->pid_sibling_previous;
-// }

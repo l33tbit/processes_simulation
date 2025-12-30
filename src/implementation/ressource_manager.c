@@ -15,16 +15,17 @@ RESSOURCE_ELEMENT* op_create_ressource_list(void) {
     RESSOURCE_ELEMENT* ressources_head = NULL;
     RESSOURCE_ELEMENT* last = NULL; // for the loop
 
+    // need_to_change if the ressources were updated
     char* ressource_names[] = {"AAA", "BBB", "CCC", "DDD", "EEE", "FFF"};
 
     for (int i = 0; i < ressource_number; i++) {
 
         RESSOURCE_ELEMENT* node = (RESSOURCE_ELEMENT*)malloc(sizeof(RESSOURCE_ELEMENT));
 
-        if (node == NULL) {  // CHECK FAIL
+        if (node == NULL) {  // check failed allocation
             printf("ERROR ON: op_create_ressource_list failed to allocate new node");
-            // if a node has failed the ressource head should be freed
-            while(ressources_head != NULL) {
+
+            while(ressources_head != NULL) { // free the entire list
                 RESSOURCE_ELEMENT* temp = ressources_head;
                 ressources_head = ressources_head->next_ressource;
                 free(temp);
@@ -32,17 +33,17 @@ RESSOURCE_ELEMENT* op_create_ressource_list(void) {
             exit(1);
         }
 
-        node->ressource = (RESSOURCE)i; // Direct cast is cleaner
+        node->ressource = (RESSOURCE)i; // direct casting work just fine
         strcpy(node->ressource_name, ressource_names[i]);
         node->disponibilite = true; // true when ylh created
         node->next_ressource = NULL;
 
         if (ressources_head == NULL) {
-            // If the list is empty, this node is the head
+            // if the list is empty, this node is the head
             ressources_head = node;
             last = node;
         } else {
-            // Otherwise, append to the end of the list
+            // otherwise, append to the end of the list
             last->next_ressource = node;
             last = node;
         }
@@ -66,51 +67,51 @@ RESSOURCE_ELEMENT* op_look_for_ressource_in_list(RESSOURCE_MANAGER* self, RESSOU
     return NULL;
 }
 
-bool op_mark_ressource_available(RESSOURCE_MANAGER* self, RESSOURCE ressource) {
+TASK op_mark_ressource_available(RESSOURCE_MANAGER* self, RESSOURCE ressource) {
 
     RESSOURCE_ELEMENT* head = self->ressources;
 
     while (head != NULL) {
         if (head->ressource == ressource) { // if found
             head->disponibilite = true;
-            return true;
+            return TASK_SUCC;
         }
         head = head->next_ressource;
     }
 
-    return false;
+    return TASK_ERR;
 }
 
-bool op_mark_ressource_unavailable(RESSOURCE_MANAGER* self, RESSOURCE ressource) {
+TASK op_mark_ressource_unavailable(RESSOURCE_MANAGER* self, RESSOURCE ressource) {
 
     RESSOURCE_ELEMENT* head = self->ressources;
 
     while (head != NULL) {
         if (head->ressource == ressource) { // when found
             head->disponibilite = false;
-            return true;
+            return TASK_SUCC;
         }
         head = head->next_ressource;
     }
 
-    return false;
+    return TASK_ERR;
 }
 
-bool op_check_if_ressource_available(RESSOURCE_MANAGER* self, RESSOURCE ressource) {
+TASK op_check_if_ressource_available(RESSOURCE_MANAGER* self, RESSOURCE ressource) {
     
     RESSOURCE_ELEMENT* head = self->ressources;
 
     while (head != NULL) {
         if (head->ressource == ressource || head->disponibilite == true) { // when found
-            return true;
+            return TASK_SUCC;
         }
         head = head->next_ressource;
     }
 
-    return false;
+    return TASK_ERR;
 }
 
-bool op_free_ressource_list(RESSOURCE_MANAGER* self) {
+TASK op_free_ressource_list(RESSOURCE_MANAGER* self) {
 
     RESSOURCE_ELEMENT* next = self->ressources;
 
@@ -122,18 +123,18 @@ bool op_free_ressource_list(RESSOURCE_MANAGER* self) {
 
     }
 
-    return true;
+    return TASK_SUCC;
 }
 
-bool op_rm_kill(RESSOURCE_MANAGER* self) {
+TASK op_rm_kill(RESSOURCE_MANAGER* self) {
 
-    if (self->free_ressource_list(self) == false) {
-        return false;
+    if (self->free_ressource_list(self) == TASK_ERR) {
+        return TASK_ERR;
     }
 
     free(self);
 
-    return true;
+    return TASK_SUCC;
 }
 
 
