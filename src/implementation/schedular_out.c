@@ -19,13 +19,13 @@ TASK op_update_schedular_statistics(ORDONNANCEUR* self, float* exec_time, float*
     }
 
     if (finished == true) {
-        // When finished, turnaround and temp_attente must be provided
+        // when finished, turnaround and temp_attente must be provided
         if (turnaround == NULL || temp_attente == NULL) {
             fprintf(stderr, "ERROR: turnaround or temp_attente is NULL when finished=true\n");
             return TASK_ERR;
         }
         
-        // Safeguard: ensure waiting time is not negative
+        // safeguard: ensure waiting time is not negative
         float waiting_time = *temp_attente;
         if (waiting_time < 0.0f) {
             fprintf(stderr, "WARNING: Negative waiting time detected (%.2f), setting to 0\n", waiting_time);
@@ -45,7 +45,7 @@ TASK op_update_schedular_statistics(ORDONNANCEUR* self, float* exec_time, float*
                self->statistics->total_turnround, self->statistics->total_temps_attente);
 
     } else {
-        // Note: Context switches are counted when we actually switch to a different process
+        // note: context switches are counted when we actually switch to a different process
         // in the scheduling algorithms, not here (to avoid double-counting)
         self->statistics->cpu_total_temps_usage += *exec_time;
     }
@@ -124,7 +124,7 @@ void op_calculate_performance_summary(ORDONNANCEUR* self, float total_time) {
         ps->throughput = 0.0f;
     }
     ps->context_switches = self->statistics->context_switch;
-    ps->preemptions = 0; // TODO: count from segments
+    ps->preemptions = 0; // todo: count from segments
     ps->priority_inversions = 0;
     ps->starved_processes = 0;
 }

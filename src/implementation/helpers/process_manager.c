@@ -286,30 +286,6 @@ PARSED_RETURN* parser_func(char* line) {
                 exit(1);
             }
             
-            // // need_to_be_deleted Handle empty value (can happen with trailing comma)
-            // if (char_count == 0) {
-            //     // Empty field - might be trailing comma, skip it
-            //     if (value_number >= 8) {
-            //         // We have all required fields, ignore trailing empty field
-            //         free(value);
-            //         value = (char*)malloc(2);
-            //         char_count = 0;
-            //         value[0] = '\0';
-            //         value_number++;
-            //         continue;
-            //     } else if (value_number == 7) {
-            //         // Empty arrival time field - set to 0
-            //         parsed_line->unvalid_process_csv_check = false;
-            //         parsed_line->temps_arrive = 0.0f;
-            //         free(value);
-            //         value = (char*)malloc(2);
-            //         char_count = 0;
-            //         value[0] = '\0';
-            //         value_number++;
-            //         continue;
-            //     }
-            // }
-            
             switch (value_number) {
                 case 0:
                     if (strlen(value) > 20) {
@@ -473,7 +449,7 @@ PARSED_RETURN* parser_func(char* line) {
 
 
 INSTRUCTION_PARSED_RETURN* instruction_parser(char* value) { // retrieve instruction name .. value is the instructions line
-    if (value[0] == '\0' || value[0] != '[') { // we already checked NULLTY, check string hadi jsp ida kan khawi to make sure and check instruction line satts with '['
+    if (value[0] == '\0' || value[0] != '[') { // i already checked NULLTY, check string hadi jsp ida kan khawi to make sure and check instruction line satts with '['
         fprintf(stderr, "ERROR ON: instruction parser check the validity of instruction line\n");
         exit(1);
     }

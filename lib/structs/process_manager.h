@@ -44,12 +44,12 @@ typedef struct PROCESS_MANAGER {
 
     // initialization & cleaning
     struct PCB* (*create_process_table)(struct PROCESS_MANAGER* self); 
-    struct PCB* (*create_ready_queue)(struct PROCESS_MANAGER* self, PCB* process_table_head, bool circular);
+    struct PCB* (*create_ready_queue)(struct PROCESS_MANAGER* self, bool circular);
     struct PCB* (*create_blocked_queue)();                      
-    INITIALIZATION (*init)(struct PROCESS_MANAGER* self, FILE* buffer, int algorithm); 
+    TASK (*init)(struct PROCESS_MANAGER* self, FILE* buffer, int algorithm); 
     WORK_RETURN (*kill)(struct PROCESS_MANAGER* self);         
     TASK (*free_process_table)(struct PROCESS_MANAGER* self); 
-    void (*free_ready_queue)(struct PROCESS_MANAGER* self);                 
+    void (*free_ready_queue)(PCB* head);                 
 
     // process table related
     PCB* (*get_all_processus)(FILE* buffer);                    
@@ -60,7 +60,7 @@ typedef struct PROCESS_MANAGER {
     // pcb management
     PROCESS_UPDATE (*update_process)(struct PROCESS_MANAGER* self, PCB* pcb, float* temps_fin, float* cpu_temps_used);
     PCB* (*assign_functions_to_pcb)(struct PROCESS_MANAGER* self, PCB* pcb); 
-    PCB* (*mark_process_table_pcb_terminated)(struct PROCESS_MANAGER* self, PCB* pcb, float completion_time);
+    TASK (*mark_process_table_pcb_terminated)(struct PROCESS_MANAGER* self, PCB* pcb, float completion_time);
 
     // ready queue related
     struct PCB* (*push_to_ready_queue)(struct PROCESS_MANAGER* self, struct PCB* pcb, bool circular);
@@ -69,7 +69,7 @@ typedef struct PROCESS_MANAGER {
     struct PCB* (*insert_after_ready)(struct PROCESS_MANAGER* self, PCB* after_pcb, PCB* pcb_to_insert);
 
     // blocked queue related
-    TASK (*add_process_to_blocked_queue)(struct PROCESS_MANAGER* self, PCB* pcb);
+    push_return (*add_process_to_blocked_queue)(struct PROCESS_MANAGER* self, PCB* pcb);
     struct PCB* (*delete_from_blocked_queue)(struct PROCESS_MANAGER* self, PCB* pcb);
     struct PCB* (*get_blocked_queue_element)(struct PROCESS_MANAGER* self, PCB* pcb);
 

@@ -152,8 +152,8 @@ typedef struct ORDONNANCEUR {
     // resource_management related
     sched_ressources_return (*check_ressources)(struct ORDONNANCEUR* self, struct PCB* exec_proc);
     TASK (*check_ressource_disponibility)(struct ORDONNANCEUR* self, RESSOURCE ressource);
-    TASK (*need_ressources)(RESSOURCE_ELEMENT* ressource_needed);
-    TASK (*ressource_is_free)(struct ORDONNANCEUR* self, struct SIMULATOR* simulator, RESSOURCE ressource);
+    TASK (*need_ressources)(struct ORDONNANCEUR* self, RESSOURCE_ELEMENT* ressource_needed);
+    TASK (*ressource_is_free)(struct ORDONNANCEUR* self, RESSOURCE ressource);
     
     // ready_queue related
     TASK (*ask_sort_rt)(struct ORDONNANCEUR* self);

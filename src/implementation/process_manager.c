@@ -41,7 +41,6 @@ PCB* op_insert_after_ready(PROCESS_MANAGER* self, PCB* after_pcb, PCB* pcb_to_in
     if (pcb_to_insert == NULL) {  // nothing to insert
         fprintf(stderr, "ERROR ON: op_push_after pcb_to_insert is null\n");
         
-        
         return self->ready_queue_head;  // return the head
     }
     
@@ -88,6 +87,7 @@ PCB* op_insert_after_ready(PROCESS_MANAGER* self, PCB* after_pcb, PCB* pcb_to_in
     return self->ready_queue_head;
 }
 
+
 void op_free_ready_queue(PCB* head) {
     PCB* current = head;
     PCB* next;
@@ -132,7 +132,6 @@ PCB* op_create_ready_queue(PROCESS_MANAGER* self, bool circular) {  // we dont p
             strncpy(new_pcb->process_name, process_table_node->process_name, sizeof(new_pcb->process_name)); // strncpy copy byte per byte so char by char to make sure
             strncpy(new_pcb->user_id, process_table_node->user_id, sizeof(new_pcb->user_id)); // strncpy copy byte per byte so char by char to make sure
 
-            new_pcb->ppid = process_table_node->ppid;
             new_pcb->etat = process_table_node->etat;
             new_pcb->prioritie = process_table_node->prioritie;
             new_pcb->programme_compteur = process_table_node->programme_compteur;
@@ -163,7 +162,7 @@ PCB* op_create_ready_queue(PROCESS_MANAGER* self, bool circular) {  // we dont p
             
                 memcpy(new_instr, src_instr, sizeof(INSTRUCTION));
             
-                new_instr->process = new_pcb; // Update owner
+                new_instr->process = new_pcb; // update owner
                 new_instr->next = NULL;
 
                 if (n_head == NULL) { // s it's the first instruct
@@ -180,7 +179,7 @@ PCB* op_create_ready_queue(PROCESS_MANAGER* self, bool circular) {  // we dont p
             new_pcb->current_instruction = n_head; // same
             
 
-            // init the next as NULL
+            // init the next as null
             new_pcb->pid_sibling_next = NULL;
             
             // push the pcb to ready queue
@@ -385,80 +384,6 @@ PCB* op_sort_ready_by_rt(PROCESS_MANAGER* self) {
     return sorted_head;
 }
 
-
-// PCB* op_sort_ready_by_rt(PROCESS_MANAGER* self) {
-//     PCB* ready_queue_head = self->ready_queue_head;
-
-//     if (ready_queue_head == NULL) {
-//         // Empty queue is not an error
-//         return NULL;
-//     }
-    
-//     // First, check if the list is circular and break the circle if needed
-//     PCB* tail = ready_queue_head;
-//     int node_count = 0;
-//     bool is_circular = false;
-    
-//     // Find tail and check for circularity
-//     while (tail->pid_sibling_next != NULL && 
-//            tail->pid_sibling_next != ready_queue_head && 
-//            node_count < 100) {  // Safety limit
-//         tail = tail->pid_sibling_next;
-//         node_count++;
-//     }
-    
-//     if (tail->pid_sibling_next == ready_queue_head) {
-//         // List is circular - break the circle
-//         is_circular = true;
-//         tail->pid_sibling_next = NULL;
-//         printf("DEBUG: Detected circular list, breaking circle\n");
-//     }
-    
-//     // Now sort the list (now it's non-circular)
-//     PCB* sorted_head = NULL;
-//     PCB* current = ready_queue_head;
-//     node_count = 0;
-    
-//     while (current != NULL && node_count < 100) {  // Safety limit
-//         node_count++;
-//         PCB* next = current->pid_sibling_next;
-    
-//         // Insert current into sorted list
-//         if (sorted_head == NULL || current->remaining_time < sorted_head->remaining_time) {
-//             current->pid_sibling_next = sorted_head;
-//             sorted_head = current;
-//         } else {
-//             PCB* search = sorted_head;
-//             while (search->pid_sibling_next != NULL &&
-//                    search->pid_sibling_next->remaining_time < current->remaining_time) {
-//                 search = search->pid_sibling_next;
-//             }
-//             current->pid_sibling_next = search->pid_sibling_next;
-//             search->pid_sibling_next = current;
-//         }
-//         current = next;
-//     }
-    
-//     if (node_count >= 100) {
-//         fprintf(stderr, "ERROR: Sort function hit safety limit - possible infinite loop\n");
-//         return NULL;
-//     }
-    
-//     printf("Sort completed, sorted %d nodes\n", node_count);
-    
-//     // If the list was originally circular, make the sorted list circular
-//     if (is_circular && sorted_head != NULL) {
-//         PCB* new_tail = sorted_head;
-//         while (new_tail->pid_sibling_next != NULL) {
-//             new_tail = new_tail->pid_sibling_next;
-//         }
-//         new_tail->pid_sibling_next = sorted_head;
-//         printf("DEBUG: Restored circularity after sorting\n");
-//     }
-    
-//     return sorted_head;
-// }
-
 PCB* op_sort_ready_by_sjf(PROCESS_MANAGER* self) {
     PCB* ready_queue_head = self->ready_queue_head;
     
@@ -469,7 +394,7 @@ PCB* op_sort_ready_by_sjf(PROCESS_MANAGER* self) {
     
     printf("SJF sort: start ready queue head is :%d\n", ready_queue_head->pid);
     
-    // Check for cycles in the list
+    // check for cycles in the list
     PCB* slow = ready_queue_head;
     PCB* fast = ready_queue_head;
     int cycle_detected = 0;
@@ -513,9 +438,9 @@ PCB* op_sort_ready_by_sjf(PROCESS_MANAGER* self) {
                    active_count, current->pid, current->burst_time, current->etat);
         }
         
-        // Only include non-terminated processes
+        // only include non-terminated processes
         if (current->etat != TERMINATED) {
-            // Detach current node from original list
+            // detach current node from original list
             current->pid_sibling_next = NULL;
             
             if (head == NULL) {
@@ -555,7 +480,7 @@ PCB* op_sort_ready_by_sjf(PROCESS_MANAGER* self) {
             PCB* next_node = current_node->pid_sibling_next;
             
             if (current_node->burst_time > next_node->burst_time) {
-                // Swap nodes
+                // swap nodes
                 current_node->pid_sibling_next = next_node->pid_sibling_next;
                 next_node->pid_sibling_next = current_node;
                 *ptr = next_node;
@@ -570,7 +495,7 @@ PCB* op_sort_ready_by_sjf(PROCESS_MANAGER* self) {
         }
     } while (chang && sort_iterations < 1000);
     
-    // Debug: Print sorted order  need_to_be_removed
+    // debug: print sorted order  need_to_be_removed
     printf("SJF sort: Sorted order (first 5): ");
     current = head;
     for (int i = 0; i < 5 && current != NULL; i++) {
@@ -583,8 +508,6 @@ PCB* op_sort_ready_by_sjf(PROCESS_MANAGER* self) {
     
     return head;
 }
-
-
 
 float op_find_max_arrival_time(PROCESS_MANAGER* self) {
     float max_arrival = 0.0f;
@@ -625,7 +548,7 @@ PCB* op_sort_ready_by_burst(PROCESS_MANAGER* process_manager) {
     // find the process with the first arrival tile
     while (current != NULL) {
         PCB* next = current->pid_sibling_next;
-    
+
         // insert the current into the sorted
         if (sorted_head == NULL || current->burst_time < sorted_head->burst_time) {
             // insert in the start
@@ -677,7 +600,7 @@ TASK op_update_read_queue(PROCESS_MANAGER* self, bool circular) {
                 
                 PCB* result = self->push_to_ready_queue(self, current, circular);
                 if (result != NULL) {
-                    current->etat = READY_QUEUE;  // MARK READY BECAUSE PUSHED
+                    current->etat = READY_QUEUE;  // mark ready because pushed
                     inserted++;
                 }
                 printf("ççççççççç");
@@ -709,8 +632,16 @@ PROCESS_UPDATE op_pro_update_process(PROCESS_MANAGER* self, PCB* pcb, float *tem
     if (cpu_temps_used) {
 
         pcb->cpu_time_used += *cpu_temps_used; // because initialized to 0
-        pcb->remaining_time = pcb->burst_time - pcb->cpu_time_used;
+        // critical fix: update remaining_time by subtracting the time used, not recalculating from burst_time
+        // this prevents dependency on burst_time being correct and avoids floating-point precision issues
+        pcb->remaining_time = pcb->remaining_time - *cpu_temps_used;
         
+        // sanity check: remaining_time should not go negative (allow small negative due to rounding)
+        if (pcb->remaining_time < -0.0001f) {
+            fprintf(stderr, "WARNING: remaining_time went negative (%.6f) for PID %d, clamping to 0\n", 
+                   pcb->remaining_time, pcb->pid);
+            pcb->remaining_time = 0.0f;
+        }
     }
     
     // updating the given fields
@@ -726,17 +657,17 @@ PCB* op_push_to_ready_queue(PROCESS_MANAGER* self, PCB* pcb, bool circular) {
         return self->ready_queue_head;
     }
     
-    // Create new PCB (copy)
+    // create new pcb (copy)
     PCB* ready_pcb = (PCB*)malloc(sizeof(PCB));
     if (!ready_pcb) {
         printf("ERROR: Failed to allocate PCB copy\n");
         return self->ready_queue_head;
     }
     
-    // Copy the PCB (simplified - you may need deep copy)
+    // copy the pcb (simplified - you may need deep copy)
     memcpy(ready_pcb, pcb, sizeof(PCB));
     
-    // Allocate new statistics for the copy
+    // allocate new statistics for the copy
     PROCESS_STATISTICS* new_stats = (PROCESS_STATISTICS*)calloc(1, sizeof(PROCESS_STATISTICS));
     if (new_stats == NULL) {
         free(ready_pcb);
@@ -749,26 +680,26 @@ PCB* op_push_to_ready_queue(PROCESS_MANAGER* self, PCB* pcb, bool circular) {
     new_stats->tournround = ready_pcb->statistics->tournround;
     ready_pcb->statistics = new_stats;
     
-    // IMPORTANT: Reset the sibling pointer to avoid cycles
+    // important: reset the sibling pointer to avoid cycles
     ready_pcb->pid_sibling_next = NULL;
     ready_pcb->etat = READY_QUEUE;
     
-    // Insert into ready queue
+    // insert into ready queue
     if (self->ready_queue_head == NULL) {
         self->ready_queue_head = ready_pcb;
         if (circular) {
-            ready_pcb->pid_sibling_next = ready_pcb; // Self-loop for circular
+            ready_pcb->pid_sibling_next = ready_pcb; // self-loop for circular
         }
     } else {
-        // Find the last node SAFELY
+        // find the last node safely
         PCB* last = self->ready_queue_head;
         
-        // Use visited tracking to detect cycles
-        int visited[1000] = {0}; // Assuming max 1000 processes
+        // use visited tracking to detect cycles
+        int visited[1000] = {0}; // assuming max 1000 processes
         int count = 0;
         
         if (circular) {
-            // For circular: find node before head
+            // for circular: find node before head
             while (last->pid_sibling_next != self->ready_queue_head) {
                 last = last->pid_sibling_next;
                 count++;
@@ -780,18 +711,18 @@ PCB* op_push_to_ready_queue(PROCESS_MANAGER* self, PCB* pcb, bool circular) {
             last->pid_sibling_next = ready_pcb;
             ready_pcb->pid_sibling_next = self->ready_queue_head;
         } else {
-            // For non-circular: find NULL
+            // for non-circular: find null
             while (last->pid_sibling_next != NULL) {
-                // Track visited nodes to detect cycles
+                // track visited nodes to detect cycles
                 if (count < 1000) {
                     visited[count] = last->pid;
                 }
                 
-                // Check if we're revisiting a node
+                // check if we're revisiting a node
                 for (int i = 0; i < count; i++) {
                     if (visited[i] == last->pid) {
                         printf("ERROR: Cycle detected at PID %d!\n", last->pid);
-                        last->pid_sibling_next = NULL; // Break cycle
+                        last->pid_sibling_next = NULL; // break cycle
                         goto found_end;
                     }
                 }
@@ -801,7 +732,7 @@ PCB* op_push_to_ready_queue(PROCESS_MANAGER* self, PCB* pcb, bool circular) {
                 
                 if (count > 1000) {
                     printf("ERROR: List too long, possible infinite loop!\n");
-                    last->pid_sibling_next = NULL; // Force end
+                    last->pid_sibling_next = NULL; // force end
                     break;
                 }
             }
@@ -942,7 +873,7 @@ TASK op_mark_process_table_pcb_terminated(PROCESS_MANAGER* self, PCB* pcb, float
                 current->statistics->temps_fin = completion_time;
                 current->statistics->tournround = completion_time - current->statistics->temps_arrive;
                 
-                // Calculate waiting time: completion_time - arrival_time - burst_time
+                // calculate waiting time: completion_time - arrival_time - burst_time
                 float waiting_time = completion_time - 
                                     current->statistics->temps_arrive - 
                                     current->burst_time;
@@ -1067,7 +998,7 @@ PCB* op_get_ready_queue_head(PROCESS_MANAGER* self) {
 
 
 // bloqued queue related
-PCB* op_add_process_to_blocked_queue(PROCESS_MANAGER* process_manager, PCB* pcb) { // should covert pcb to BLOCKED_QUEUE_ELEMENT then push it
+push_return op_add_process_to_blocked_queue(PROCESS_MANAGER* process_manager, PCB* pcb) { // should covert pcb to BLOCKED_QUEUE_ELEMENT then push it
 
     PCB* blocked_queue_head = process_manager->blocked_queue_head;
 
@@ -1076,7 +1007,7 @@ PCB* op_add_process_to_blocked_queue(PROCESS_MANAGER* process_manager, PCB* pcb)
 
     if (blocked_queue_head == NULL) { // if there is no process in the blocked the pcb will be the head
         process_manager->blocked_queue_head = pcb;  // so updating the head setting it as the pcb giving in the arguments
-        return pcb;
+        return PUSH_ERROR; 
     }
 
     PCB* iter = blocked_queue_head;
@@ -1089,7 +1020,7 @@ PCB* op_add_process_to_blocked_queue(PROCESS_MANAGER* process_manager, PCB* pcb)
     iter->pid_sibling_next = pcb;
 
     // the head is the same so returning it
-    return blocked_queue_head;
+    return PUSHED;
 }
 
 
@@ -1151,6 +1082,8 @@ PCB* op_get_blocked_queue_element(PROCESS_MANAGER* self, PCB* pcb) {
 
     return NULL;
 }
+
+// i didnt use it
 // PCB* op_sort_ready_by_sjf(PROCESS_MANAGER* self) { // need to simplify the algo and test
 //     PCB* ready_queue_head = self->ready_queue_head;
     
@@ -1295,7 +1228,6 @@ PCB* op_get_blocked_queue_element(PROCESS_MANAGER* self, PCB* pcb) {
 //     return sorted_head;
 // }
 
-
 PCB* op_get_next_ready_element(PROCESS_MANAGER* self, PCB* current_pcb) {
 
     if (current_pcb == NULL) {
@@ -1344,7 +1276,6 @@ TASK op_free_process_list(PROCESS_MANAGER* self) {
 float op_proc_get_max_arrival_time(PROCESS_MANAGER* self) {
     return self->max_arrival_time;
 }
-
 
 
 
@@ -1406,7 +1337,7 @@ TASK op_pro_init(PROCESS_MANAGER* self, FILE* buffer, int algorithm) {
 
     self->process_table_head = self->create_process_table(self); // return the first element in process table
 
-    self->ready_queue_head = self->create_ready_queue(self, self->process_table_head, (algorithm == 0 ? true : false)); // if it's rr then circular
+    self->ready_queue_head = self->create_ready_queue(self, (algorithm == 0 ? true : false)); // if it's rr then circular
 
     self->blocked_queue_head = self->create_blocked_queue();
 

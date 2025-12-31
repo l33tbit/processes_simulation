@@ -126,15 +126,15 @@ TASK op_free_ressource_list(RESSOURCE_MANAGER* self) {
     return TASK_SUCC;
 }
 
-TASK op_rm_kill(RESSOURCE_MANAGER* self) {
+WORK_RETURN op_rm_kill(RESSOURCE_MANAGER* self) {
 
     if (self->free_ressource_list(self) == TASK_ERR) {
-        return TASK_ERR;
+        return WORK_ERROR;
     }
 
     free(self);
 
-    return TASK_SUCC;
+    return WORK_DONE;
 }
 
 

@@ -29,7 +29,7 @@ typedef struct EXECUTION_QUEUE {
     struct ORDONNANCEUR* schedular;     // 8 bytes: pointer
     
     // initialization & cleaning
-    INITIALIZATION (*init)(struct EXECUTION_QUEUE* self);
+    TASK (*init)(struct EXECUTION_QUEUE* self);
     WORK_RETURN (*kill)(struct EXECUTION_QUEUE* self);
     
     // instruction related

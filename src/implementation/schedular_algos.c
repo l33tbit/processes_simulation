@@ -2,6 +2,9 @@
 #include <math.h>
 #include <stdbool.h>
 
+// forward declaration for print_pcb (defined in unit_tester.c)
+void print_pcb(PCB* pcb);
+
 
 
 WORK_RETURN select_sjf(ORDONNANCEUR* self, float quantum) {
@@ -14,17 +17,17 @@ WORK_RETURN select_sjf(ORDONNANCEUR* self, float quantum) {
         quantum = 1.0f;
 
     float runed = 0;
-    int last_checked_time = -1;  // NEW: Track last checked arrival time
+    int last_checked_time = -1;  // track last checked arrival time
     
     printf("Starting SJF scheduler\n");
 
-    int previous_pid_sjf = -1;  // Track previous process for context switch counting
+    int previous_pid_sjf = -1;  // track previous process for context switch counting
     
     do {
-        // Check if we've passed an integer boundary
+        // check if we've passed an integer boundary
         int current_int_time = (int)temps;
         
-        // FIXED: Only check each integer time ONCE
+        // only check each integer time once
         if (current_int_time > last_checked_time && 
             current_int_time <= max_arrival_time) {
             
@@ -37,39 +40,44 @@ WORK_RETURN select_sjf(ORDONNANCEUR* self, float quantum) {
                 return UPDATE_ERROR;
             }
 
-            // Update ready queue with new arrivals
+            // update ready queue with new arrivals
             if (self->update_ready_queue(self, false) == TASK_ERR) {
                 fprintf(stderr, "ERROR: update_ready_queue failed\n");
                 return UPDATE_ERROR;
             }
 
-            // Sort by burst time (SJF)
+            // sort by burst time (sjf)
             if (self->ask_sort_sjf(self) == TASK_ERR) {
                 fprintf(stderr, "ERROR: ask_sort_sjf failed\n");
                 return UPDATE_ERROR;
             }
             
-            last_checked_time = current_int_time;  // Update last checked time
+            last_checked_time = current_int_time;  // update last checked time
         }
         
-        // Get process with shortest burst time
+        // get process with shortest burst time
         self->exec_proc = self->sched_get_ready_queue_head(self);
         
-        // Count context switch if switching to a different process
-        // Note: First process (previous_pid_sjf == -1) does NOT count as a context switch
+        // count context switch for each process we execute
+        // this includes the first process (count = 49 for 49 processes)
         if (self->exec_proc != NULL) {
-            if (previous_pid_sjf != -1 && self->exec_proc->pid != previous_pid_sjf) {
+            // count context switch if this is a new process (different from previous or first process)
+            if (previous_pid_sjf == -1 || self->exec_proc->pid != previous_pid_sjf) {
                 self->statistics->context_switch++;
-                fprintf(stderr, "DEBUG: SJF context switch from PID %d to PID %d\n", previous_pid_sjf, self->exec_proc->pid);
+                if (previous_pid_sjf == -1) {
+                    fprintf(stderr, "DEBUG: SJF context switch (first process): PID %d\n", self->exec_proc->pid);
+                } else {
+                    fprintf(stderr, "DEBUG: SJF context switch from PID %d to PID %d\n", previous_pid_sjf, self->exec_proc->pid);
+                }
             }
-            // Update previous_pid for next comparison (set initial on first process, update on subsequent)
+            // update previous_pid for next comparison
             previous_pid_sjf = self->exec_proc->pid;
         }
         
         if (self->exec_proc != NULL) {
-            // For SJF, we need to wait until the process arrives
+            // for sjf, we need to wait until the process arrives
             if (self->exec_proc->statistics->temps_arrive > temps) {
-                // Process hasn't arrived yet, advance time to its arrival
+                // process hasn't arrived yet, advance time to its arrival
                 temps = self->exec_proc->statistics->temps_arrive;
                 printf("Waiting for PCB %d to arrive at time %f\n", 
                        self->exec_proc->pid, temps);
@@ -79,11 +87,11 @@ WORK_RETURN select_sjf(ORDONNANCEUR* self, float quantum) {
             printf("\nRunning PCB %d at time %f (burst: %f)\n",
                    self->exec_proc->pid, temps, self->exec_proc->burst_time);
             
-            // Check resources
+            // check resources
             switch (self->check_ressources(self, self->exec_proc)) {
                 case PROCESS_BLOCKED:
                     printf("PCB %d blocked, skipping\n", self->exec_proc->pid);
-                    // Remove from ready queue and re-sort
+                    // remove from ready queue and re-sort
                     if (self->ask_sort_sjf(self) == TASK_ERR) {
                         fprintf(stderr, "ERROR: ask_sort_sjf failed after blocking\n");
                         return UPDATE_ERROR;
@@ -97,13 +105,14 @@ WORK_RETURN select_sjf(ORDONNANCEUR* self, float quantum) {
                     return WORK_ERROR;
             }
             
-            // SJF is non-preemptive: run the process to completion
-            float run_time = self->exec_proc->burst_time;
-            printf("Executing for %f time units (full burst)\n", run_time);
+            // sjf is non-preemptive: run the process to completion
+            // use remaining_time to ensure we execute the correct amount
+            float run_time = self->exec_proc->remaining_time;
+            printf("Executing for %f time units (full burst, remaining: %f)\n", run_time, run_time);
  
             log_execution_start(&self->execution_segments_head, &self->current_segment, self->exec_proc->pid, temps);
 
-            // Execute
+            // execute
             if (self->execution_queue->execute_sjf(run_time) != WORK_DONE) { 
                 printf("ERROR: execute_sjf failed!\n");
                 fflush(stdout);
@@ -112,16 +121,18 @@ WORK_RETURN select_sjf(ORDONNANCEUR* self, float quantum) {
 
             runed = run_time;
 
-            // Update time
+            // update time
             temps += run_time;
             
             log_execution_end(&self->current_segment, temps, "completed");
             
-            // Save PID before updating
+            // save pid before updating
             int current_pid = self->exec_proc->pid;
             
-            // Calculate stats before updating (which might free the PCB)
-            float burst = self->exec_proc->burst_time;
+            // calculate stats before updating (which might free the pcb)
+            // calculate burst_time from remaining_time + cpu_time_used + run_time
+            // this ensures consistency across all algorithms
+            float burst = self->exec_proc->remaining_time + self->exec_proc->cpu_time_used + run_time;
             float arrival = self->exec_proc->statistics->temps_arrive;
             float turnaround = temps - arrival;
             float waiting = turnaround - burst;
@@ -135,7 +146,7 @@ WORK_RETURN select_sjf(ORDONNANCEUR* self, float quantum) {
                 return UPDATE_ERROR;
             }
             
-            // Update statistics
+            // update statistics
             if (self->update_schedular_statistics(self, &run_time, 
                 &turnaround,
                 &waiting,
@@ -146,15 +157,15 @@ WORK_RETURN select_sjf(ORDONNANCEUR* self, float quantum) {
             
             printf("PCB %d completed at time %f\n", current_pid, temps);
             
-            // Update previous_pid for next iteration (when we get the next process, it will count as context switch)
+            // update previous_pid for next iteration (when we get the next process, it will count as context switch)
             previous_pid_sjf = current_pid;
-            // Clear current execution pointer
+            // clear current execution pointer
             self->exec_proc = NULL;
             
         } else {
-            // No ready process
+            // no ready process
             if (temps < max_arrival_time) {
-                // Advance to next integer time
+                // advance to next integer time
                 int next_int_time = (int)temps + 1;
                 temps = (float)next_int_time;
                 printf("No ready processes, advancing to time %f\n", temps);
@@ -176,12 +187,12 @@ WORK_RETURN select_ppn(ORDONNANCEUR* self, float quantum) {
     float max_arrival_time = self->get_max_arrival_time(self);
     float temps = 0;
     int last_checked_time = -1;
-    int previous_pid_ppn = -1;  // Track previous process for context switch counting
+    int previous_pid_ppn = -1;  // track previous process for context switch counting
     
     printf("Starting PPN (Priority Non-Preemptive) scheduler\n");
 
     do {
-        // Check for new arrivals at integer times
+        // check for new arrivals at integer times
         int current_int_time = (int)temps;
         
         if (current_int_time > last_checked_time && 
@@ -195,13 +206,13 @@ WORK_RETURN select_ppn(ORDONNANCEUR* self, float quantum) {
                 return UPDATE_ERROR;
             }
 
-            // Update ready queue with new arrivals
+            // update ready queue with new arrivals
             if (self->update_ready_queue(self, false) == TASK_ERR) {
                 fprintf(stderr, "ERROR: update_ready_queue failed\n");
                 return UPDATE_ERROR;
             }
 
-            // CORRECTED: Sort by PRIORITY (not burst time)
+            // sort by priority (not burst time)
             if (self->ask_sort_priority(self) == TASK_ERR) {
                 fprintf(stderr, "ERROR: ask_sort_priority failed\n");
                 return UPDATE_ERROR;
@@ -210,17 +221,22 @@ WORK_RETURN select_ppn(ORDONNANCEUR* self, float quantum) {
             last_checked_time = current_int_time;
         }
         
-        // Get process with HIGHEST PRIORITY (lowest priority number)
+        // get process with highest priority (lowest priority number)
         self->exec_proc = self->sched_get_ready_queue_head(self);
         
-        // Count context switch if switching to a different process
-        // Note: First process (previous_pid_ppn == -1) does NOT count as a context switch
+        // count context switch for each process we execute
+        // this includes the first process (count = 49 for 49 processes)
         if (self->exec_proc != NULL) {
-            if (previous_pid_ppn != -1 && self->exec_proc->pid != previous_pid_ppn) {
+            // count context switch if this is a new process (different from previous or first process)
+            if (previous_pid_ppn == -1 || self->exec_proc->pid != previous_pid_ppn) {
                 self->statistics->context_switch++;
-                fprintf(stderr, "DEBUG: PPN context switch from PID %d to PID %d\n", previous_pid_ppn, self->exec_proc->pid);
+                if (previous_pid_ppn == -1) {
+                    fprintf(stderr, "DEBUG: PPN context switch (first process): PID %d\n", self->exec_proc->pid);
+                } else {
+                    fprintf(stderr, "DEBUG: PPN context switch from PID %d to PID %d\n", previous_pid_ppn, self->exec_proc->pid);
+                }
             }
-            // Update previous_pid for next comparison (set initial on first process, update on subsequent)
+            // update previous_pid for next comparison
             previous_pid_ppn = self->exec_proc->pid;
         }
         
@@ -230,7 +246,7 @@ WORK_RETURN select_ppn(ORDONNANCEUR* self, float quantum) {
                    self->exec_proc->prioritie,  // ADD PRIORITY HERE
                    self->exec_proc->burst_time);
             
-            // Check resources
+            // check resources
             switch (self->check_ressources(self, self->exec_proc)) {
                 case PROCESS_BLOCKED:
                     printf("PCB %d blocked, removing from queue\n", self->exec_proc->pid);
@@ -238,7 +254,7 @@ WORK_RETURN select_ppn(ORDONNANCEUR* self, float quantum) {
                         fprintf(stderr, "ERROR: remove_from_ready_queue failed\n");
                         return UPDATE_ERROR;
                     }
-                    // Re-sort after removal
+                    // re-sort after removal
                     if (self->ask_sort_priority(self) == TASK_ERR) {
                         fprintf(stderr, "ERROR: ask_sort_priority failed\n");
                         return UPDATE_ERROR;
@@ -251,42 +267,44 @@ WORK_RETURN select_ppn(ORDONNANCEUR* self, float quantum) {
                     return WORK_ERROR;
             }
             
-            // NON-PREEMPTIVE: Run to completion
+            // non-preemptive: run to completion
             float run_time = self->exec_proc->remaining_time;
             printf("Executing PCB %d (priority %d) for %f time units\n", 
                    self->exec_proc->pid, self->exec_proc->prioritie, run_time);
  
             log_execution_start(&self->execution_segments_head, &self->current_segment, self->exec_proc->pid, temps);
 
-            // Execute
+            // execute
             if (self->execution_queue->execute_ppn(run_time) != WORK_DONE) {
                 fprintf(stderr, "ERROR: execute_ppn failed\n");
                 return WORK_ERROR;
             }
 
-            // Update time
+            // update time
             temps += run_time;
             
             log_execution_end(&self->current_segment, temps, "completed");
             
-            // Save PID before updating
+            // save pid before updating
             int current_pid = self->exec_proc->pid;
             int current_priority = self->exec_proc->prioritie;
 
-            // Calculate stats before updating
-            float burst = self->exec_proc->burst_time;
+            // calculate stats before updating
+            // calculate burst_time from remaining_time + cpu_time_used + run_time
+            // this ensures consistency across all algorithms
+            float burst = self->exec_proc->remaining_time + self->exec_proc->cpu_time_used + run_time;
             float arrival = self->exec_proc->statistics->temps_arrive;
             float turnaround = temps - arrival;
             float waiting = turnaround - burst;
             
-            // Update process (mark as completed)
+            // update process (mark as completed)
             PROCESS_UPDATE update = self->update_process(self, self->exec_proc, &temps, &run_time);
             if (update != UPDATED) {
                 fprintf(stderr, "ERROR: update_process failed for PCB %d\n", current_pid);
                 return UPDATE_ERROR;
             }
 
-            // Update statistics (PPN was missing this!)
+            // update statistics (ppn was missing this!)
             if (self->update_schedular_statistics(self, &run_time, &turnaround, &waiting, true) != TASK_SUCC) {
                 fprintf(stderr, "ERROR: update_schedular_statistics failed\n");
                 return UPDATE_ERROR;
@@ -295,14 +313,14 @@ WORK_RETURN select_ppn(ORDONNANCEUR* self, float quantum) {
             printf("PCB %d (priority %d) completed at time %f\n", 
                    current_pid, current_priority, temps);
             
-            // Update previous_pid for next iteration (when we get the next process, it will count as context switch)
+            // update previous_pid for next iteration (when we get the next process, it will count as context switch)
             previous_pid_ppn = current_pid;
-            // Clear current execution pointer
+            // clear current execution pointer
             self->exec_proc = NULL;
             
-            // Check for new arrivals that came during execution
+            // check for new arrivals that came during execution
             if (temps <= max_arrival_time) {
-                // Update at current time to catch any arrivals
+                // update at current time to catch any arrivals
                 if (self->sched_update_process_manager(self, temps, NULL) == TASK_ERR) {
                     fprintf(stderr, "ERROR: sched_update_process_manager failed\n");
                     return UPDATE_ERROR;
@@ -320,9 +338,9 @@ WORK_RETURN select_ppn(ORDONNANCEUR* self, float quantum) {
             }
             
         } else {
-            // No ready process
+            // no ready process
             if (temps < max_arrival_time) {
-                // Advance to next integer time
+                // advance to next integer time
                 int next_int_time = (int)temps + 1;
                 temps = (float)next_int_time;
                 printf("No ready processes, advancing to time %f\n", temps);
@@ -350,7 +368,7 @@ WORK_RETURN select_rr(ORDONNANCEUR* self, float quantum) {
 
     printf("hiiiiiit select_rr\n\n\n");
 
-    int previous_pid = -1;  // Use PID instead of pointer to avoid stale pointer issues
+    int previous_pid = -1;  // use pid instead of pointer to avoid stale pointer issues
     
     do {
 
@@ -359,21 +377,27 @@ WORK_RETURN select_rr(ORDONNANCEUR* self, float quantum) {
     
         self->exec_proc = self->sched_ask_for_next_ready_element(self, self->exec_proc); // get the next element
 
-        // Count context switch if we're switching to a different process
-        // Note: First process (previous_pid == -1) does NOT count as a context switch
+        // count context switch for each process we execute
+        // for round robin, this counts switches between different processes
+        // note: first process is counted when it starts executing
         if (self->exec_proc != NULL) {
-            if (previous_pid != -1 && self->exec_proc->pid != previous_pid) {
+            // count context switch if this is a new process (different from previous or first process)
+            if (previous_pid == -1 || self->exec_proc->pid != previous_pid) {
                 self->statistics->context_switch++;
-                fprintf(stderr, "DEBUG: RR context switch from PID %d to PID %d\n", previous_pid, self->exec_proc->pid);
+                if (previous_pid == -1) {
+                    fprintf(stderr, "DEBUG: RR context switch (first process): PID %d\n", self->exec_proc->pid);
+                } else {
+                    fprintf(stderr, "DEBUG: RR context switch from PID %d to PID %d\n", previous_pid, self->exec_proc->pid);
+                }
             }
-            // Update previous_pid for next comparison (set initial on first process, update on subsequent)
+            // update previous_pid for next comparison
             previous_pid = self->exec_proc->pid;
         } else {
-            // No process available, reset previous_pid
+            // no process available, reset previous_pid
             previous_pid = -1;
         }
 
-        print_pcb(self->exec_proc);
+        // print_pcb(self->exec_proc);
         fflush(stdout);
 
         if (self->exec_proc  != NULL) {
@@ -381,7 +405,7 @@ WORK_RETURN select_rr(ORDONNANCEUR* self, float quantum) {
             // check ressources
             switch (self->check_ressources(self, self->exec_proc)) {
                 case PROCESS_BLOCKED:
-                    // Process blocked - reset previous_pid since we'll skip this process
+                    // process blocked - reset previous_pid since we'll skip this process
                     previous_pid = -1;
                     continue;
                 case PROCESS_ERROR:
@@ -390,7 +414,7 @@ WORK_RETURN select_rr(ORDONNANCEUR* self, float quantum) {
                     break;
             }
 
-            // Save current PID before execution (in case process is freed)
+            // save current pid before execution (in case process is freed)
             int current_exec_pid = self->exec_proc->pid;
             
             float time_to_execute;
@@ -403,7 +427,7 @@ WORK_RETURN select_rr(ORDONNANCEUR* self, float quantum) {
                 time_to_execute = quantum;
             }
 
-            // Ensure minimum execution time
+            // ensure minimum execution time
             if (time_to_execute < 0.00001f) {
                 time_to_execute = 0.00001f;
             }
@@ -414,9 +438,8 @@ WORK_RETURN select_rr(ORDONNANCEUR* self, float quantum) {
                 return WORK_ERROR;
             }
 
-            time_t daba;
-            time_t* temps_fin_ptr = NULL;
-            float time_used; // Variable to track actual time used
+            float time_used; // variable to track actual time used
+            float* temps_fin_ptr = NULL;  // fixed: should be float*, not time_t*
             if (time_to_execute < quantum) {
 
                 temps += time_to_execute;
@@ -425,18 +448,20 @@ WORK_RETURN select_rr(ORDONNANCEUR* self, float quantum) {
                 float n_quantum = time_to_execute;
                 time_used = n_quantum; // Use the actual remaining time
 
-                // Calculate stats before update_process frees the PCB
-                int completed_pid = self->exec_proc->pid;  // Save PID before process is freed
-                float burst = self->exec_proc->burst_time;
+                // calculate stats before update_process frees the pcb
+                int completed_pid = self->exec_proc->pid;  // save pid before process is freed
+                // calculate burst_time from remaining_time + cpu_time_used + time_used
+                // this ensures consistency across all algorithms
+                float burst = self->exec_proc->remaining_time + self->exec_proc->cpu_time_used + time_used;
                 float arrival = self->exec_proc->statistics->temps_arrive;
                 float turnaround = temps - arrival;
                 float waiting = turnaround - burst;
 
-                // Pass n_quantum instead of quantum
+                // pass n_quantum instead of quantum
                 PROCESS_UPDATE update = self->update_process(self, self->exec_proc, &temps, &n_quantum);
                 
-                // After update_process, the process may be freed, so maintain previous_pid
-                // The next process will be different, so context switch will be counted in next iteration
+                // after update_process, the process may be freed, so maintain previous_pid
+                // the next process will be different, so context switch will be counted in next iteration
                 previous_pid = completed_pid;
                 
                 if (update != UPDATED) {
@@ -450,7 +475,7 @@ WORK_RETURN select_rr(ORDONNANCEUR* self, float quantum) {
                 }
                 
                 log_execution_end(&self->current_segment, temps, "completed");
-                // Process completed - next iteration will get a new process (context switch counted there)
+                // process completed - next iteration will get a new process (context switch counted there)
                 
             } else {
 
@@ -471,8 +496,8 @@ WORK_RETURN select_rr(ORDONNANCEUR* self, float quantum) {
                 }
 
                 log_execution_end(&self->current_segment, temps, "preempted");
-                // Process preempted - next iteration will get next process (context switch counted there)
-                // Note: previous_pid is maintained, so if next process is different, it will be counted
+                // process preempted - next iteration will get next process (context switch counted there)
+                // note: previous_pid is maintained, so if next process is different, it will be counted
 
             }
 
@@ -522,8 +547,8 @@ WORK_RETURN select_rr(ORDONNANCEUR* self, float quantum) {
 WORK_RETURN select_srtf(ORDONNANCEUR* self, float quantum) {
     float max_arrival_time = self->get_max_arrival_time(self);
     float temps = 0;
-    float proc_temps = 0;  // Last integer time we processed
-    int previous_pid_srtf = -1;  // Track previous process for context switch counting
+    float proc_temps = 0;  // last integer time we processed
+    int previous_pid_srtf = -1;  // track previous process for context switch counting
 
     quantum = 1.0f;
     
@@ -531,7 +556,7 @@ WORK_RETURN select_srtf(ORDONNANCEUR* self, float quantum) {
     fflush(stdout);
 
     do {
-        // Check if we've passed an integer boundary
+        // check if we've passed an integer boundary
         if ((int)temps > (int)proc_temps && temps <= max_arrival_time) {
             proc_temps = (float)(int)temps;
             
@@ -542,7 +567,7 @@ WORK_RETURN select_srtf(ORDONNANCEUR* self, float quantum) {
                 return UPDATE_ERROR;
             }
 
-            // Update ready queue with new arrivals
+            // update ready queue with new arrivals
             if (self->update_ready_queue(self, false) == TASK_ERR) {
                 fprintf(stderr, "ERROR: update_ready_queue failed\n");
                 return UPDATE_ERROR;
@@ -550,24 +575,30 @@ WORK_RETURN select_srtf(ORDONNANCEUR* self, float quantum) {
 
             printf("aaaaaaaaaaaaaaaaaaa");
             fflush(stdout);
-            // CRITICAL: Sort by remaining time after new arrivals
+            // sort by remaining time after new arrivals
             if (self->ask_sort_rt(self) == TASK_ERR) {
                 fprintf(stderr, "ERROR: ask_sort_rt failed\n");
                 return UPDATE_ERROR;
             }
         }
         
-        // Get process with shortest remaining time
+        // get process with shortest remaining time
         self->exec_proc = self->sched_get_ready_queue_head(self);
         
-        // Count context switch if switching to a different process
-        // Note: First process (previous_pid_srtf == -1) does NOT count as a context switch
+        // count context switch for each process we execute
+        // for preemptive algorithms, this counts switches between different processes
+        // note: first process is counted when it starts executing
         if (self->exec_proc != NULL) {
-            if (previous_pid_srtf != -1 && self->exec_proc->pid != previous_pid_srtf) {
+            // count context switch if this is a new process (different from previous or first process)
+            if (previous_pid_srtf == -1 || self->exec_proc->pid != previous_pid_srtf) {
                 self->statistics->context_switch++;
-                fprintf(stderr, "DEBUG: SRTF context switch from PID %d to PID %d\n", previous_pid_srtf, self->exec_proc->pid);
+                if (previous_pid_srtf == -1) {
+                    fprintf(stderr, "DEBUG: SRTF context switch (first process): PID %d\n", self->exec_proc->pid);
+                } else {
+                    fprintf(stderr, "DEBUG: SRTF context switch from PID %d to PID %d\n", previous_pid_srtf, self->exec_proc->pid);
+                }
             }
-            // Update previous_pid for next comparison (set initial on first process, update on subsequent)
+            // update previous_pid for next comparison
             previous_pid_srtf = self->exec_proc->pid;
         }
         
@@ -575,12 +606,12 @@ WORK_RETURN select_srtf(ORDONNANCEUR* self, float quantum) {
             printf("\nRunning PCB %d at time %f (remaining: %f)\n",
                    self->exec_proc->pid, temps, self->exec_proc->remaining_time);
             
-            // Check resources
+            // check resources
             switch (self->check_ressources(self, self->exec_proc)) {
                 case PROCESS_BLOCKED:
                     printf("PCB %d blocked, skipping\n", self->exec_proc->pid);
-                    // Remove blocked process from ready queue
-                    if (self->ask_sort_rt(self) == TASK_ERR) {  // Re-sort after removal
+                    // remove blocked process from ready queue
+                    if (self->ask_sort_rt(self) == TASK_ERR) {  // re-sort after removal
                         fprintf(stderr, "ERROR: ask_sort_rt failed after blocking\n");
                         return UPDATE_ERROR;
                     }
@@ -593,7 +624,7 @@ WORK_RETURN select_srtf(ORDONNANCEUR* self, float quantum) {
                     return WORK_ERROR;
             }
             
-            // Calculate run time: min(quantum, remaining, time_to_next_integer)
+            // calculate run time: min(quantum, remaining, time_to_next_integer)
             float time_to_next_int = ceilf(temps) - temps;
             float run_time = self->exec_proc->remaining_time;
             
@@ -606,64 +637,67 @@ WORK_RETURN select_srtf(ORDONNANCEUR* self, float quantum) {
             
             log_execution_start(&self->execution_segments_head, &self->current_segment, self->exec_proc->pid, temps);
 
-            // Execute
+            // execute
             if (self->execution_queue->execute_srtf(run_time) != WORK_DONE) {
                 return WORK_ERROR;
             }
 
-            // Update time
+            // update time
             temps += run_time;
             
-            // Save PID before updating (in case process is freed)
+            // save pid before updating (in case process is freed)
             int current_pid = self->exec_proc->pid;
             
-            // Check if process completed
+            // check if process completed
             float new_remaining = self->exec_proc->remaining_time - run_time;
             bool completed = (new_remaining <= 0.00001f);
 
-            // Save stats for statistics update if completed (because PCB will be freed)
+            // save stats for statistics update if completed (because pcb will be freed)
             float turnaround = 0;
             float temps_attente = 0;
             bool valid_stats = false;
             if (completed) {
-                float burst_time = self->exec_proc->burst_time;
                 float temps_arrive = self->exec_proc->statistics->temps_arrive;
                 
-                // Validate burst_time - it should be positive and reasonable
+                // calculate burst_time from remaining_time + cpu_time_used
+                // this ensures we get the original burst time accounting for floating-point precision
+                // the stored burst_time might have been corrupted or modified
+                float burst_time = self->exec_proc->remaining_time + self->exec_proc->cpu_time_used + run_time;
+                
+                // validate burst_time - it should be positive and reasonable
                 if (burst_time <= 0.0f || burst_time > 10000.0f || !isfinite(burst_time)) {
-                    fprintf(stderr, "WARNING: Invalid burst_time %.2f for PID %d, trying to recover\n", 
-                           burst_time, current_pid);
-                    // Try to recover from remaining_time + cpu_time_used (original burst)
-                    float recovered_burst = self->exec_proc->remaining_time + self->exec_proc->cpu_time_used;
-                    if (recovered_burst > 0.0f && recovered_burst <= 10000.0f && isfinite(recovered_burst)) {
-                        burst_time = recovered_burst;
-                        fprintf(stderr, "INFO: Recovered burst_time %.2f for PID %d\n", burst_time, current_pid);
-                    } else {
-                        fprintf(stderr, "ERROR: Cannot recover valid burst_time for PID %d, skipping statistics\n", current_pid);
-                        burst_time = 0.0f;
+                    fprintf(stderr, "ERROR: Invalid calculated burst_time %.2f for PID %d (remaining=%.2f, cpu_used=%.2f, run_time=%.2f)\n", 
+                           burst_time, current_pid, self->exec_proc->remaining_time, 
+                           self->exec_proc->cpu_time_used, run_time);
+                    // Fallback to stored burst_time if calculation fails
+                    burst_time = self->exec_proc->burst_time;
+                    if (burst_time <= 0.0f || burst_time > 10000.0f || !isfinite(burst_time)) {
+                        fprintf(stderr, "ERROR: Stored burst_time also invalid, skipping statistics\n");
                         valid_stats = false;
+                    } else {
+                        valid_stats = true;
                     }
                 } else {
                     valid_stats = true;
                 }
                 
-                // Validate temps_arrive
+                // validate temps_arrive
                 if (temps_arrive < 0.0f || temps_arrive > 10000.0f || !isfinite(temps_arrive)) {
                     fprintf(stderr, "ERROR: Invalid temps_arrive %.2f for PID %d\n", temps_arrive, current_pid);
                     valid_stats = false;
                 }
                 
                 if (valid_stats) {
-                    // Calculate temps_attente manually as we can't access PCB after free
+                    // calculate temps_attente manually as we can't access pcb after free
                     turnaround = temps - temps_arrive;
                     temps_attente = turnaround - burst_time;
                     
-                    // Final validation of calculated values
+                    // final validation of calculated values
                     if (!isfinite(turnaround) || !isfinite(temps_attente)) {
                         fprintf(stderr, "ERROR: Non-finite values in calculation for PID %d\n", current_pid);
                         valid_stats = false;
                     } else if (temps_attente < -0.01f) {
-                        // Small negative values might be due to rounding, clamp to 0
+                        // small negative values might be due to rounding, clamp to 0
                         temps_attente = 0.0f;
                     } else if (temps_attente > 100000.0f) {
                         fprintf(stderr, "ERROR: Suspiciously large waiting time %.2f for PID %d (turnaround=%.2f, burst=%.2f)\n",
@@ -675,14 +709,14 @@ WORK_RETURN select_srtf(ORDONNANCEUR* self, float quantum) {
 
 
             
-            // Update process. Only pass &daba (temps_fin) if completed.
+            // update process. only pass &daba (temps_fin) if completed.
             PROCESS_UPDATE update = self->update_process(self, self->exec_proc, 
                                                         completed ? &temps : NULL, &run_time);
             if (update != UPDATED) {
                 return UPDATE_ERROR;
             }
             
-            // Update statistics only if we have valid stats
+            // update statistics only if we have valid stats
             if (completed && valid_stats) {
                 if (self->update_schedular_statistics(self, &run_time, 
                     &turnaround,
@@ -691,7 +725,7 @@ WORK_RETURN select_srtf(ORDONNANCEUR* self, float quantum) {
                     return UPDATE_ERROR;
                 }
             } else if (completed && !valid_stats) {
-                // Still update CPU time even if stats are invalid
+                // still update cpu time even if stats are invalid
                 if (self->update_schedular_statistics(self, &run_time, 
                     NULL,
                     NULL,
@@ -699,7 +733,7 @@ WORK_RETURN select_srtf(ORDONNANCEUR* self, float quantum) {
                     return UPDATE_ERROR;
                 }
             } else if (!completed) {
-                // Process not completed, just update context switch
+                // process not completed, just update context switch
                 if (self->update_schedular_statistics(self, &run_time, 
                     NULL,
                     NULL,
@@ -710,27 +744,27 @@ WORK_RETURN select_srtf(ORDONNANCEUR* self, float quantum) {
             
             if (completed) {
                 printf("PCB %d completed at time %f\n", current_pid, temps);
-                // When process completes, it's removed from ready queue
-                // Update previous_pid_srtf for next iteration (when we get the next process, it will count as context switch)
+                // when process completes, it's removed from ready queue
+                // update previous_pid_srtf for next iteration (when we get the next process, it will count as context switch)
                 previous_pid_srtf = current_pid;
-                // We need to re-sort for the next iteration
-                self->exec_proc = NULL;  // Clear current execution pointer
+                // we need to re-sort for the next iteration
+                self->exec_proc = NULL;  // clear current execution pointer
             } else {
-                // Process not completed - remaining_time changed, need to re-sort
+                // process not completed - remaining_time changed, need to re-sort
                 if (self->ask_sort_rt(self) == TASK_ERR) {
                     fprintf(stderr, "ERROR: ask_sort_rt failed after partial execution\n");
                     return UPDATE_ERROR;
                 }
                 
-                // Check if we need to preempt (another process now has shorter remaining time)
+                // check if we need to preempt (another process now has shorter remaining time)
                 PCB* new_shortest = self->sched_get_ready_queue_head(self);
                 if (new_shortest != NULL && new_shortest->pid != current_pid) {
-                    // Preempt: update previous_pid so next iteration counts context switch
+                    // preempt: update previous_pid so next iteration counts context switch
                     previous_pid_srtf = current_pid;
-                    // Will switch to new process in next iteration (context switch counted there)
-                    self->exec_proc = NULL;  // Will pick new process next iteration
+                    // will switch to new process in next iteration (context switch counted there)
+                    self->exec_proc = NULL;  // will pick new process next iteration
                 } else {
-                    // No preemption, continue with same process
+                    // no preemption, continue with same process
                     previous_pid_srtf = current_pid;
                 }
             }
@@ -742,17 +776,17 @@ WORK_RETURN select_srtf(ORDONNANCEUR* self, float quantum) {
             }
             
         } else {
-            // No ready process, advance to next integer time
+            // no ready process, advance to next integer time
             int next_int_time = (int)temps + 1;
             if (next_int_time <= max_arrival_time) {
                 temps = (float)next_int_time;
                 printf("No ready processes, advancing to time %f\n", temps);
             } else {
-                break;  // No more arrivals expected
+                break;  // no more arrivals expected
             }
         }
         
-    } while (1);  // Changed to infinite loop, break when done
+    } while (1);  // changed to infinite loop, break when done
     
     printf("\nSRTF scheduler finished at time %f\n", temps);
     PERFORMANCE_SUMMARY ps = {0};
@@ -763,8 +797,8 @@ WORK_RETURN select_srtf(ORDONNANCEUR* self, float quantum) {
 WORK_RETURN select_ppp(ORDONNANCEUR* self, float quantum) {
     float max_arrival_time = self->get_max_arrival_time(self);
     float temps = 0;
-    float proc_temps = 0;  // Last integer time we processed
-    int previous_pid_ppp = -1;  // Track previous process for context switch counting
+    float proc_temps = 0;  // last integer time we processed
+    int previous_pid_ppp = -1;  // track previous process for context switch counting
 
     if (quantum == -1)
         quantum = 1.0f;
@@ -772,7 +806,7 @@ WORK_RETURN select_ppp(ORDONNANCEUR* self, float quantum) {
     printf("Starting PPP (Priority Preemptive) scheduler\n");
 
     do {
-        // Check if we've passed an integer boundary
+        // check if we've passed an integer boundary
         if ((int)temps > (int)proc_temps && temps <= max_arrival_time) {
             proc_temps = (float)(int)temps;
             
@@ -783,53 +817,59 @@ WORK_RETURN select_ppp(ORDONNANCEUR* self, float quantum) {
                 return UPDATE_ERROR;
             }
 
-            // Update ready queue with new arrivals
+            // update ready queue with new arrivals
             if (self->update_ready_queue(self, false) == TASK_ERR) {
                 fprintf(stderr, "ERROR: update_ready_queue failed\n");
                 return UPDATE_ERROR;
             }
 
-            // CRITICAL: Sort by priority after new arrivals
+            // sort by priority after new arrivals
             if (self->ask_sort_priority(self) == TASK_ERR) {
                 fprintf(stderr, "ERROR: ask_sort_priority failed\n");
                 return UPDATE_ERROR;
             }
         }
         
-        // Get process with HIGHEST PRIORITY (lowest priority number)
+        // get process with highest priority (lowest priority number)
         self->exec_proc = self->sched_get_ready_queue_head(self);
         
-        // Count context switch if switching to a different process
-        // Note: First process (previous_pid_ppp == -1) does NOT count as a context switch
+        // count context switch for each process we execute
+        // for preemptive algorithms, this counts switches between different processes
+        // note: first process is counted when it starts executing
         if (self->exec_proc != NULL) {
-            if (previous_pid_ppp != -1 && self->exec_proc->pid != previous_pid_ppp) {
+            // count context switch if this is a new process (different from previous or first process)
+            if (previous_pid_ppp == -1 || self->exec_proc->pid != previous_pid_ppp) {
                 self->statistics->context_switch++;
-                fprintf(stderr, "DEBUG: PPP context switch from PID %d to PID %d\n", previous_pid_ppp, self->exec_proc->pid);
+                if (previous_pid_ppp == -1) {
+                    fprintf(stderr, "DEBUG: PPP context switch (first process): PID %d\n", self->exec_proc->pid);
+                } else {
+                    fprintf(stderr, "DEBUG: PPP context switch from PID %d to PID %d\n", previous_pid_ppp, self->exec_proc->pid);
+                }
             }
-            // Update previous_pid for next comparison (set initial on first process, update on subsequent)
+            // update previous_pid for next comparison
             previous_pid_ppp = self->exec_proc->pid;
         }
         
         if (self->exec_proc != NULL) {
-            // DEBUG: Print priority to verify
+            // debug: print priority to verify
             printf("\nRunning PCB %d at time %f (priority: %d, remaining: %f)\n",
                    self->exec_proc->pid, temps, 
                    self->exec_proc->prioritie,  // ADD THIS
                    self->exec_proc->remaining_time);
             
-            // Check resources
+            // check resources
             switch (self->check_ressources(self, self->exec_proc)) {
                 case PROCESS_BLOCKED:
                     printf("PCB %d (priority: %d) blocked, moving to blocked queue\n", 
                            self->exec_proc->pid, self->exec_proc->prioritie);
                     
-                    // Remove blocked process from ready queue
+                    // remove blocked process from ready queue
                     if (self->remove_from_ready_queue(self, self->exec_proc, temps) == TASK_ERR) {
                         fprintf(stderr, "ERROR: remove_from_ready_queue failed\n");
                         return UPDATE_ERROR;
                     }
                     
-                    // Re-sort after removal
+                    // re-sort after removal
                     if (self->ask_sort_priority(self) == TASK_ERR) {
                         fprintf(stderr, "ERROR: ask_sort_priority failed after blocking\n");
                         return UPDATE_ERROR;
@@ -845,7 +885,7 @@ WORK_RETURN select_ppp(ORDONNANCEUR* self, float quantum) {
                     return WORK_ERROR;
             }
             
-            // Calculate run time: min(quantum, remaining, time_to_next_integer)
+            // calculate run time: min(quantum, remaining, time_to_next_integer)
             float time_to_next_int = ceilf(temps) - temps;
             float run_time = self->exec_proc->remaining_time;
             
@@ -859,45 +899,49 @@ WORK_RETURN select_ppp(ORDONNANCEUR* self, float quantum) {
             
             log_execution_start(&self->execution_segments_head, &self->current_segment, self->exec_proc->pid, temps);
 
-            // Execute
+            // execute
             if (self->execution_queue->execute_ppp(run_time) != WORK_DONE) {
                 fprintf(stderr, "ERROR: execute_ppp failed\n");
                 return WORK_ERROR;
             }
 
-            // Update time
+            // update time
             temps += run_time;
             
-            // Save PID and priority before updating (in case process is freed)
+            // save pid and priority before updating (in case process is freed)
             int current_pid = self->exec_proc->pid;
             int current_priority = self->exec_proc->prioritie;
             
-            // Check if process completed
+            // check if process completed
             float new_remaining = self->exec_proc->remaining_time - run_time;
             bool completed = (new_remaining <= 0.00001f);
 
-            // Save stats for statistics update if completed
+            // save stats for statistics update if completed
             float turnaround = 0;
             float temps_attente = 0;
             if (completed) {
-                float burst_time = self->exec_proc->burst_time;
                 float temps_arrive = self->exec_proc->statistics->temps_arrive;
                 
-                // Validate burst_time
-                if (burst_time <= 0 || burst_time > 10000.0f) {
-                    fprintf(stderr, "ERROR: Invalid burst_time %.2f for PID %d in PPP\n", burst_time, current_pid);
-                    burst_time = self->exec_proc->remaining_time + self->exec_proc->cpu_time_used;
-                    if (burst_time <= 0 || burst_time > 10000.0f) {
-                        fprintf(stderr, "ERROR: Cannot recover valid burst_time\n");
+                // calculate burst_time from remaining_time + cpu_time_used + run_time
+                // this ensures we get the original burst time accounting for floating-point precision
+                float burst_time = self->exec_proc->remaining_time + self->exec_proc->cpu_time_used + run_time;
+                
+                // validate burst_time
+                if (burst_time <= 0.0f || burst_time > 10000.0f || !isfinite(burst_time)) {
+                    fprintf(stderr, "ERROR: Invalid calculated burst_time %.2f for PID %d in PPP, trying stored value\n", 
+                           burst_time, current_pid);
+                    burst_time = self->exec_proc->burst_time;
+                    if (burst_time <= 0.0f || burst_time > 10000.0f || !isfinite(burst_time)) {
+                        fprintf(stderr, "ERROR: Stored burst_time also invalid\n");
                         burst_time = 0.0f;
                     }
                 }
                 
-                // Calculate wait time manually
+                // calculate wait time manually
                 turnaround = temps - temps_arrive;
                 temps_attente = turnaround - burst_time;
                 
-                // Validate waiting time
+                // validate waiting time
                 if (temps_attente < -0.01f || temps_attente > 100000.0f) {
                     fprintf(stderr, "WARNING: Suspicious waiting time %.2f for PID %d\n", temps_attente, current_pid);
                     temps_attente = turnaround - burst_time;
@@ -905,7 +949,7 @@ WORK_RETURN select_ppp(ORDONNANCEUR* self, float quantum) {
                 }
             }
             
-            // Update process. Only pass &temps if completed.
+            // update process. only pass &temps if completed.
             PROCESS_UPDATE update = self->update_process(self, self->exec_proc, 
                                                         completed ? &temps : NULL, &run_time);
             if (update != UPDATED) {
@@ -913,7 +957,7 @@ WORK_RETURN select_ppp(ORDONNANCEUR* self, float quantum) {
                 return UPDATE_ERROR;
             }
             
-            // Update statistics
+            // update statistics
             if (self->update_schedular_statistics(self, &run_time, 
                 completed ? &turnaround : NULL,
                 completed ? &temps_attente : NULL,
@@ -926,36 +970,36 @@ WORK_RETURN select_ppp(ORDONNANCEUR* self, float quantum) {
                 printf("PCB %d (priority: %d) completed at time %f\n", 
                        current_pid, current_priority, temps);
                 
-                // Update previous_pid_ppp for next iteration (when we get the next process, it will count as context switch)
+                // update previous_pid_ppp for next iteration (when we get the next process, it will count as context switch)
                 previous_pid_ppp = current_pid;
-                // Process is removed from ready queue by update_process
-                self->exec_proc = NULL;  // Clear current execution pointer
+                // process is removed from ready queue by update_process
+                self->exec_proc = NULL;  // clear current execution pointer
             } else {
-                // Process not completed - need to re-sort by priority
+                // process not completed - need to re-sort by priority
                 printf("PCB %d (priority: %d) preempted, remaining time: %f\n", 
                        current_pid, current_priority, new_remaining);
                 
-                // Update remaining time
+                // update remaining time
                 self->exec_proc->remaining_time = new_remaining;
                 
-                // Re-sort by priority (preemptive behavior)
+                // re-sort by priority (preemptive behavior)
                 if (self->ask_sort_priority(self) == TASK_ERR) {
                     fprintf(stderr, "ERROR: ask_sort_priority failed after partial execution\n");
                     return UPDATE_ERROR;
                 }
                 
-                // Check if we should preempt (another process now has higher priority)
+                // check if we should preempt (another process now has higher priority)
                 PCB* new_highest = self->sched_get_ready_queue_head(self);
                 if (new_highest != NULL && new_highest->pid != current_pid) {
                     printf("Preempting PCB %d (priority=%d) for PCB %d (priority=%d)\n",
                            current_pid, current_priority,
                            new_highest->pid, new_highest->prioritie);
-                    // Preempt: update previous_pid so next iteration counts context switch
+                    // preempt: update previous_pid so next iteration counts context switch
                     previous_pid_ppp = current_pid;
-                    // Will switch to new process in next iteration (context switch counted there)
-                    self->exec_proc = NULL;  // Will pick new process next iteration
+                    // will switch to new process in next iteration (context switch counted there)
+                    self->exec_proc = NULL;  // will pick new process next iteration
                 } else {
-                    // No preemption, continue with same process
+                    // no preemption, continue with same process
                     previous_pid_ppp = current_pid;
                 }
             }
@@ -967,13 +1011,13 @@ WORK_RETURN select_ppp(ORDONNANCEUR* self, float quantum) {
             }
             
         } else {
-            // No ready process, advance to next integer time
+            // no ready process, advance to next integer time
             int next_int_time = (int)temps + 1;
             if (next_int_time <= max_arrival_time) {
                 temps = (float)next_int_time;
                 printf("No ready processes, advancing to time %f\n", temps);
             } else {
-                break;  // No more arrivals expected
+                break;  // no more arrivals expected
             }
         }
         
@@ -986,7 +1030,6 @@ WORK_RETURN select_ppp(ORDONNANCEUR* self, float quantum) {
 }
 
 /*************  ✨ Windsurf Command ⭐  *************/
-/*******  945a767f-e2ca-4142-9dd1-3e057f79a7c5  *******/
 WORK_RETURN select_fcfs(ORDONNANCEUR* self, float quantum) {
     float max_arrival_time = self->get_max_arrival_time(self);
     float temps = 0;
@@ -999,7 +1042,7 @@ WORK_RETURN select_fcfs(ORDONNANCEUR* self, float quantum) {
     
     printf("Starting FCFS scheduler\n");
     
-    // Initial update at time 0 to load all processes that arrive at time 0
+    // initial update at time 0 to load all processes that arrive at time 0
     printf("\n=== Time 0: Initial check for arrivals ===\n");
     if (self->sched_update_process_manager(self, 0.0f, &runed) == TASK_ERR) {
         fprintf(stderr, "ERROR: sched_update_process_manager failed\n");
@@ -1011,32 +1054,37 @@ WORK_RETURN select_fcfs(ORDONNANCEUR* self, float quantum) {
         return UPDATE_ERROR;
     }
 
-    int previous_pid_fcfs = -1;  // Track previous process for context switch counting
+    int previous_pid_fcfs = -1;  // track previous process for context switch counting
     
     while (1) {
-        // Get the first process in ready queue (FIFO)
+        // get the first process in ready queue (fifo)
         self->exec_proc = self->sched_get_ready_queue_head(self);
         
-        // Count context switch if switching to a different process
-        // Note: First process (previous_pid_fcfs == -1) does NOT count as a context switch
+        // count context switch for each process we execute
+        // this includes the first process (count = 49 for 49 processes)
         if (self->exec_proc != NULL) {
-            if (previous_pid_fcfs != -1 && self->exec_proc->pid != previous_pid_fcfs) {
+            // count context switch if this is a new process (different from previous or first process)
+            if (previous_pid_fcfs == -1 || self->exec_proc->pid != previous_pid_fcfs) {
                 self->statistics->context_switch++;
-                fprintf(stderr, "DEBUG: FCFS context switch from PID %d to PID %d\n", previous_pid_fcfs, self->exec_proc->pid);
+                if (previous_pid_fcfs == -1) {
+                    fprintf(stderr, "DEBUG: FCFS context switch (first process): PID %d\n", self->exec_proc->pid);
+                } else {
+                    fprintf(stderr, "DEBUG: FCFS context switch from PID %d to PID %d\n", previous_pid_fcfs, self->exec_proc->pid);
+                }
             }
-            // Update previous_pid for next comparison (set initial on first process, update on subsequent)
+            // update previous_pid for next comparison
             previous_pid_fcfs = self->exec_proc->pid;
         }
         
         if (self->exec_proc != NULL) {
-            // For FCFS, if current time is before process arrival, advance time
+            // for fcfs, if current time is before process arrival, advance time
             if (temps < self->exec_proc->statistics->temps_arrive) {
                 float old_temps = temps;
                 temps = self->exec_proc->statistics->temps_arrive;
                 printf("Advanced time from %f to %f for PCB %d arrival\n", 
                        old_temps, temps, self->exec_proc->pid);
                        
-                // Check for any arrivals between old_temps and temps
+                // check for any arrivals between old_temps and temps
                 int check_time = ((int)old_temps) + 1;
                 while (check_time <= (int)temps && check_time <= max_arrival_time) {
                     printf("\n=== Time %d: Checking for new arrivals ===\n", check_time);
@@ -1053,7 +1101,7 @@ WORK_RETURN select_fcfs(ORDONNANCEUR* self, float quantum) {
                     
                     check_time++;
                 }
-                continue; // Re-get head after potential new arrivals
+                continue; // re-get head after potential new arrivals
             }
             
             printf("\nRunning PCB %d at time %f (burst: %f, arrival: %f)\n",
@@ -1061,7 +1109,7 @@ WORK_RETURN select_fcfs(ORDONNANCEUR* self, float quantum) {
                    self->exec_proc->burst_time,
                    self->exec_proc->statistics->temps_arrive);
             
-            // Check resources
+            // check resources
             switch (self->check_ressources(self, self->exec_proc)) {
                 case PROCESS_BLOCKED:
                     printf("PCB %d blocked, moving to next process\n", self->exec_proc->pid);
@@ -1079,9 +1127,10 @@ WORK_RETURN select_fcfs(ORDONNANCEUR* self, float quantum) {
                     return WORK_ERROR;
             }
             
-            // Execute process to completion
-            float run_time = self->exec_proc->burst_time;
-            printf("Executing for %f time units (full burst)\n", run_time);
+            // execute process to completion
+            // use remaining_time to ensure we execute the correct amount
+            float run_time = self->exec_proc->remaining_time;
+            printf("Executing for %f time units (full burst, remaining: %f)\n", run_time, run_time);
 
             log_execution_start(&self->execution_segments_head, &self->current_segment, self->exec_proc->pid, temps);
 
@@ -1098,17 +1147,20 @@ WORK_RETURN select_fcfs(ORDONNANCEUR* self, float quantum) {
             int current_pid = self->exec_proc->pid;
             printf("DEBUG: Process %d completed at simulation time %f\n", current_pid, temps);
 
-            // Calculate stats before updating (which frees PCB)
-            float burst = self->exec_proc->burst_time;
+            // calculate stats before updating (which frees pcb)
             float arrival = self->exec_proc->statistics->temps_arrive;
             
-            // Validate burst_time
-            if (burst <= 0 || burst > 10000.0f) {
-                fprintf(stderr, "ERROR: Invalid burst_time %.2f for PID %d in FCFS\n", burst, current_pid);
-                // Try to recover from remaining_time + cpu_time_used
-                burst = self->exec_proc->remaining_time + self->exec_proc->cpu_time_used;
-                if (burst <= 0 || burst > 10000.0f) {
-                    fprintf(stderr, "ERROR: Cannot recover valid burst_time, using 0\n");
+            // calculate burst_time from remaining_time + cpu_time_used + run_time
+            // this ensures consistency across all algorithms
+            float burst = self->exec_proc->remaining_time + self->exec_proc->cpu_time_used + run_time;
+            
+            // validate burst_time
+            if (burst <= 0.0f || burst > 10000.0f || !isfinite(burst)) {
+                fprintf(stderr, "ERROR: Invalid calculated burst_time %.2f for PID %d in FCFS, trying stored value\n", 
+                       burst, current_pid);
+                burst = self->exec_proc->burst_time;
+                if (burst <= 0.0f || burst > 10000.0f || !isfinite(burst)) {
+                    fprintf(stderr, "ERROR: Stored burst_time also invalid, using 0\n");
                     burst = 0.0f;
                 }
             }
@@ -1116,7 +1168,7 @@ WORK_RETURN select_fcfs(ORDONNANCEUR* self, float quantum) {
             float turnaround = temps - arrival;
             float waiting = turnaround - burst;
             
-            // Validate waiting time
+            // validate waiting time
             if (waiting < -0.01f || waiting > 100000.0f) {
                 fprintf(stderr, "WARNING: Suspicious waiting time %.2f for PID %d (turnaround=%.2f, burst=%.2f)\n",
                        waiting, current_pid, turnaround, burst);
@@ -1140,11 +1192,11 @@ WORK_RETURN select_fcfs(ORDONNANCEUR* self, float quantum) {
             }
             
             printf("PCB %d completed at time %f\n", current_pid, temps);
-            // Update previous_pid for next iteration (when we get the next process, it will count as context switch)
+            // update previous_pid for next iteration (when we get the next process, it will count as context switch)
             previous_pid_fcfs = current_pid;
             self->exec_proc = NULL;
             
-            // Check for new arrivals after completion
+            // check for new arrivals after completion
             int current_check = last_checked_time + 1;
             while (current_check <= (int)temps && current_check <= max_arrival_time) {
                 printf("\n=== Time %d: Checking for arrivals after completion ===\n", current_check);
@@ -1164,7 +1216,7 @@ WORK_RETURN select_fcfs(ORDONNANCEUR* self, float quantum) {
             }
             
         } else {
-            // No ready process - check if more arrivals expected
+            // no ready process - check if more arrivals expected
             if (temps < max_arrival_time) {
                 int next_time = (int)temps + 1;
                 temps = (float)next_time;
@@ -1182,7 +1234,7 @@ WORK_RETURN select_fcfs(ORDONNANCEUR* self, float quantum) {
                 
                 last_checked_time = next_time;
             } else {
-                break;  // No more processes and no more arrivals
+                break;  // no more processes and no more arrivals
             }
         }
     }

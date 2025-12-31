@@ -44,7 +44,7 @@ TASK log_execution_end(EXECUTION_SEGMENT** current, float end_time, const char* 
 }
 
 void print_gantt_chart(EXECUTION_SEGMENT* head) {
-    FILE* file = fopen("/home/zeus/projects/processus_simulation/src/python_ui/outputs/gantt_chart.txt", "w");
+    FILE* file = fopen("src/python_ui/outputs/gantt_chart.txt", "w");
     if (file == NULL) {
         fprintf(stderr, "Error opening gantt_chart.txt\n");
         return;
@@ -60,43 +60,43 @@ void print_gantt_chart(EXECUTION_SEGMENT* head) {
 void calculate_performance_summary(PERFORMANCE_SUMMARY* ps, float total_time, ORDONNANCEUR_STATISTICS* stats) {
     ps->total_simulation_time = total_time;
     
-    // Debug: Print statistics values
+    // debug: print statistics values
     fprintf(stderr, "DEBUG: calculate_performance_summary - processus_termine_count=%d, cpu_total_temps_usage=%.2f, total_turnround=%.2f, total_temps_attente=%.2f\n",
            stats->processus_termine_count, stats->cpu_total_temps_usage, stats->total_turnround, stats->total_temps_attente);
     
-    // Calculate CPU utilization
-    // CPU utilization = (CPU busy time) / (total simulation time)
-    // cpu_total_temps_usage = sum of all execution times (actual CPU work)
-    // total_time = total simulation time (includes idle time when CPU waits for arrivals)
-    // If there's idle time, cpu_total_temps_usage < total_time, so utilization < 100%
+    // calculate cpu utilization
+    // cpu utilization = (cpu busy time) / (total simulation time)
+    // cpu_total_temps_usage = sum of all execution times (actual cpu work)
+    // total_time = total simulation time (includes idle time when cpu waits for arrivals)
+    // if there's idle time, cpu_total_temps_usage < total_time, so utilization < 100%
     if (total_time > 0.0f) {
         float utilization = (stats->cpu_total_temps_usage / total_time) * 100.0f;
         
-        // Cap at 100% (can't exceed 100%)
+        // cap at 100% (can't exceed 100%)
         if (utilization > 100.0f) {
             fprintf(stderr, "WARNING: CPU utilization > 100%% (%.2f%%) - cpu_usage=%.2f, total_time=%.2f\n",
                    utilization, stats->cpu_total_temps_usage, total_time);
             utilization = 100.0f;
         }
         
-        // Round to 2 decimal places to avoid precision issues
+        // round to 2 decimal places to avoid precision issues
         utilization = ((int)(utilization * 100.0f + 0.5f)) / 100.0f;
         
         ps->cpu_utilization_percent = utilization;
         
-        // Debug output
+        // debug output
         fprintf(stderr, "DEBUG: CPU utilization calculation - cpu_usage=%.2f, total_time=%.2f, utilization=%.2f%%\n",
                stats->cpu_total_temps_usage, total_time, utilization);
     } else {
         ps->cpu_utilization_percent = 0.0f;
     }
     
-    // Calculate averages
+    // calculate averages
     if (stats->processus_termine_count > 0) {
         ps->avg_turnaround_time = stats->total_turnround / stats->processus_termine_count;
         ps->avg_waiting_time = stats->total_temps_attente / stats->processus_termine_count;
         
-        // Safeguard: waiting time should not be negative
+        // safeguard: waiting time should not be negative
         if (ps->avg_waiting_time < 0.0f) {
             fprintf(stderr, "WARNING: Negative average waiting time detected, setting to 0\n");
             ps->avg_waiting_time = 0.0f;
@@ -107,7 +107,7 @@ void calculate_performance_summary(PERFORMANCE_SUMMARY* ps, float total_time, OR
         ps->avg_waiting_time = 0.0f;
     }
     
-    // Calculate throughput: processes completed per unit time
+    // calculate throughput: processes completed per unit time
     if (total_time > 0.0f) {
         ps->throughput = (float)stats->processus_termine_count / total_time;
     } else {
@@ -115,7 +115,7 @@ void calculate_performance_summary(PERFORMANCE_SUMMARY* ps, float total_time, OR
     }
     
     ps->context_switches = stats->context_switch;
-    ps->preemptions = 0; // TODO: count from segments
+    ps->preemptions = 0; // todo: count from segments
     ps->priority_inversions = 0;
     ps->starved_processes = 0;
 }
@@ -126,22 +126,22 @@ void print_performance_summary(PERFORMANCE_SUMMARY* summary, int algo) {
 
     switch (algo) {
         case 0:
-            strcpy(filename, "/home/zeus/projects/processus_simulation/src/python_ui/outputs/performance_summary_rr.txt");
+            strcpy(filename, "src/python_ui/outputs/performance_summary_rr.txt");
             break;
         case 1:
-            strcpy(filename, "/home/zeus/projects/processus_simulation/src/python_ui/outputs/performance_summary_fcfs.txt");
+            strcpy(filename, "src/python_ui/outputs/performance_summary_fcfs.txt");
             break;
         case 2:
-            strcpy(filename, "/home/zeus/projects/processus_simulation/src/python_ui/outputs/performance_summary_srtf.txt");
+            strcpy(filename, "src/python_ui/outputs/performance_summary_srtf.txt");
             break;
         case 3:
-            strcpy(filename, "/home/zeus/projects/processus_simulation/src/python_ui/outputs/performance_summary_ppp.txt");
+            strcpy(filename, "src/python_ui/outputs/performance_summary_ppp.txt");
             break;
         case 4:
-            strcpy(filename, "/home/zeus/projects/processus_simulation/src/python_ui/outputs/performance_summary_ppn.txt");
+            strcpy(filename, "src/python_ui/outputs/performance_summary_ppn.txt");
             break;
         case 5:
-            strcpy(filename, "/home/zeus/projects/processus_simulation/src/python_ui/outputs/performance_summary_sjf.txt");
+            strcpy(filename, "src/python_ui/outputs/performance_summary_sjf.txt");
             break;
     }
 
@@ -161,7 +161,7 @@ void print_performance_summary(PERFORMANCE_SUMMARY* summary, int algo) {
 }
 
 void print_process_details(PCB* process_table_head) {
-    FILE* file = fopen("/home/zeus/projects/processus_simulation/src/python_ui/outputs/process_details.txt", "w");
+    FILE* file = fopen("src/python_ui/outputs/process_details.txt", "w");
     if (file == NULL) {
         fprintf(stderr, "Error opening process_details.txt\n");
         return;

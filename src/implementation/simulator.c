@@ -1,5 +1,6 @@
 #pragma once
 
+typedef struct SIMULATOR SIMULATOR;
 #include "../../lib/structs/simulator.h"
 #include "../../lib/structs/process.h"
 #include "../../lib/structs/process_manager.h"
@@ -18,7 +19,7 @@
 #include <string.h>
 #include <stdbool.h>
 
-// Extern globals from unit_tester
+// extern globals from unit_tester
 extern int global_algorithm;
 extern float global_quantum;
 
@@ -103,8 +104,8 @@ TASK op_simul_update_process_manager(SIMULATOR* self, FILE* processus_buffer, fl
 }
 
 
-TASK op_signal_ressource_is_free(RESSOURCE_MANAGER* ressource_manager, RESSOURCE ressource) {
-    return ressource_manager->mark_ressource_available(ressource_manager, ressource);
+TASK op_signal_ressource_is_free(SIMULATOR* self, RESSOURCE ressource) {
+    return self->ressource_manager->mark_ressource_available(self->ressource_manager, ressource);
 
 }
 
@@ -146,8 +147,17 @@ TASK op_simul_ask_sort_sjf(SIMULATOR* self) {
 }
 
 PROCESS_UPDATE op_sched_update_process(SIMULATOR* self, PCB* pcb, time_t* temps_fin, float* cpu_temps_used) { // with nullty check; updating temps_fin = market_terminated = update_turnround ; updating cpu_temps_used = updating_remaining_time
-
-    return self->process_manager->update_process(self->process_manager, pcb, temps_fin, cpu_temps_used);
+    // convert time_t* to float* for process_manager->update_process
+    // note: time_t is typically long, need to convert to float
+    float temps_fin_float_value;
+    float* temps_fin_float = NULL;
+    
+    if (temps_fin != NULL) {
+        temps_fin_float_value = (float)*temps_fin;
+        temps_fin_float = &temps_fin_float_value;
+    }
+    
+    return self->process_manager->update_process(self->process_manager, pcb, temps_fin_float, cpu_temps_used);
 }
 
 WORK_RETURN op_simul_stop(SIMULATOR* self) {
@@ -178,9 +188,9 @@ OPTIONS* op_ask_for_options() {
     int algorithm = global_algorithm;
     float quantum = global_quantum;
 
-    // If quantum not set, use default
+    // if quantum not set, use default
     if (quantum <= 0) {
-        quantum = 2.0f; // Default quantum for RR
+        quantum = 2.0f; // default quantum for rr
     }
 
     OPTIONS* options = (OPTIONS*)malloc(sizeof(OPTIONS));
@@ -300,7 +310,7 @@ WORK_RETURN op_simul_init(SIMULATOR* self, FILE* buffer) {
     self->create_schedular = op_create_schedular;
     self->create_ressource_manager = op_create_ressource_manager;
     self->simul_ask_for_next_ready_element = op_simul_ask_for_next_ready_element;
-    self->simul_get_ready_queue_head = op_simul_get_ready_queue_head;
+    // self->simul_get_ready_queue_head = op_simul_get_ready_queue_head;
     self->simul_push_to_blocked_queue = op_simul_push_to_blocked_queue;
     self->simul_update_process_manager = op_simul_update_process_manager;
     self->get_max_arrival_time = op_simul_get_max_arrival_time;

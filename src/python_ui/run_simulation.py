@@ -23,7 +23,7 @@ class SchedulerUI:
         self.root.title("CPU Scheduler Simulator")
         self.root.geometry("1400x900")
 
-        self.c_executable = "/home/zeus/projects/processus_simulation/src/unit_testing/unit_tester"
+        self.c_executable = "/home/zeus/projects/final/processus_simulation/src/unit_testing/unit_tester"
 
         # Store chart objects
         self.fig = None
@@ -74,7 +74,7 @@ class SchedulerUI:
         
         # Input file selection
         ttk.Label(control_frame, text="Input CSV:", font=('Arial', 11)).pack(anchor=tk.W, pady=(20, 5))
-        self.file_var = tk.StringVar(value="/home/zeus/projects/processus_simulation/src/unit_testing/data_testing.csv")
+        self.file_var = tk.StringVar(value="/home/zeus/projects/final/processus_simulation/src/unit_testing/data_testing.csv")
         ttk.Entry(control_frame, textvariable=self.file_var).pack(fill=tk.X, pady=(0, 15))
         
         # Run button

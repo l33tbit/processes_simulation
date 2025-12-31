@@ -81,7 +81,7 @@ typedef struct SIMULATOR {
     TASK (*ask_sort_sjf)(struct SIMULATOR* self);
     
     // statistics related
-    PCB* (*simul_get_ready_queue_head)(ORDONNANCEUR* self);
+    PCB* (*simul_get_ready_queue_head)(struct SIMULATOR* self);
     TASK (*simul_update_process_manager)(struct SIMULATOR* self, FILE* processus_buffer, float* temps, float* runed);
     float (*get_max_arrival_time)(struct SIMULATOR* self);
     TASK (*update_ready_queue)(struct SIMULATOR* self, bool circular);

@@ -71,7 +71,6 @@ typedef struct PCB {
     int pid;                            // 4 bytes: integer
     char process_name[20];              // 20 bytes: chaine caracter 20 bytes
     char user_id[20];                   // 20 bytes: same thing
-    int ppid;                           // 4 bytes: integer
     
     E_etat etat;                        // 4 bytes: enumeration is integer
     int prioritie;                      // 4 bytes: integer

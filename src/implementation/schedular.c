@@ -6,7 +6,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <math.h>  // add this at the top of your file
-#include <limits.h>  // For INT_MIN, INT_MAX
+#include <limits.h>  // for int_min, int_max
 
 #include "../../lib/structs/execution_queue.h"
 #include "../../lib/structs/schedular.h"
@@ -21,6 +21,8 @@
 #include "../../src/implementation/schedular_out.c"
 
 #include "../../src/implementation/output.c"
+
+PCB* op_simul_get_ready_queue_head(struct SIMULATOR* self);
 
 ORDONNANCEUR_STATISTICS* op_create_statistics() {   
 
@@ -49,7 +51,9 @@ EXECUTION_QUEUE* op_create_execution_queue() {
 // ordonnanceur to simulator
 TASK op_need_ressources(ORDONNANCEUR* self, RESSOURCE_ELEMENT* ressource_needed) {
     
-    return self->need_ressources(ressource_needed);
+    // call through the function pointer - note this creates a circular dependency
+    // the function pointer signature has been updated to match
+    return self->need_ressources(self, ressource_needed);
 
 }
 
@@ -65,7 +69,7 @@ TASK op_update_cpu_time_used(ORDONNANCEUR* self, float inc) {
 
 }
 
-TASK op_update_process(ORDONNANCEUR* self,PCB* process, float *temps_fin, float *tournround) {
+PROCESS_UPDATE op_update_process(ORDONNANCEUR* self,PCB* process, float *temps_fin, float *tournround) {
     
     printf("DEBUG: op_update_process called with temps_fin %p\n", temps_fin);
     fflush(stdout);
@@ -111,7 +115,7 @@ TASK op_check_ressource_disponibility(ORDONNANCEUR* self, RESSOURCE ressource) {
 
 WORK_RETURN sched_kill(ORDONNANCEUR* self) {
 
-    // Free execution segments
+    // free execution segments
     EXECUTION_SEGMENT* current = self->execution_segments_head;
     while (current != NULL) {
         EXECUTION_SEGMENT* next = current->next;
@@ -139,12 +143,12 @@ WORK_RETURN sched_kill(ORDONNANCEUR* self) {
 
 
 PCB* op_sched_get_ready_queue_head(ORDONNANCEUR* self) {
-    return self->simulator->simul_get_ready_queue_head(self->simulator);
+    return op_simul_get_ready_queue_head(self->simulator);
 }
 
-sched_ressources_return op_check_ressources(ORDONNANCEUR* self, PCB* exec_proc) {  // Changed parameter to PCB*
+sched_ressources_return op_check_ressources(ORDONNANCEUR* self, PCB* exec_proc) {  // changed parameter to pcb*
 
-    INSTRUCTION* next_instruct = exec_proc->instructions_head;  // Get instructions from PCB
+    INSTRUCTION* next_instruct = exec_proc->instructions_head;  // get instructions from pcb
     RESSOURCE ressources[ressource_number] = {0};
     int ressource_count = 0;
 
@@ -153,15 +157,15 @@ sched_ressources_return op_check_ressources(ORDONNANCEUR* self, PCB* exec_proc) 
         RESSOURCE ressource_needed = next_instruct->type;
         bool already = false;
 
-        // Check if resource is already in the array
+        // check if resource is already in the array
         for (int i = 0; i < ressource_count; i++) {
             if (ressources[i] == ressource_needed) {
                 already = true;
-                break;  // Exit loop early if found
+                break;  // exit loop early if found
             }
         }
 
-        // If not already in array, add it
+        // if not already in array, add it
         if (!already) {
             ressources[ressource_count] = ressource_needed;
             ressource_count++;
@@ -170,19 +174,19 @@ sched_ressources_return op_check_ressources(ORDONNANCEUR* self, PCB* exec_proc) 
         next_instruct = next_instruct->next;
     }
 
-    // Check all resources first
+    // check all resources first
     bool resources_available = true;
     for (int i = 0; i < ressource_count; i++) {
         if (self->check_ressource_disponibility(self, ressources[i]) == TASK_ERR) {
             resources_available = false;
-            break;  // Exit early if any resource is unavailable
+            break;  // exit early if any resource is unavailable
         }
     }
 
-    // If any resource is unavailable, block the process and continue to next iteration
+    // if any resource is unavailable, block the process and continue to next iteration
     if (!resources_available) {
-        if (self->sched_push_to_blocked_queue(self, exec_proc) == PUSHED) {  // Use exec_proc parameter
-            return PROCESS_BLOCKED;  // This will skip execution and go to next while loop iteration
+        if (self->sched_push_to_blocked_queue(self, exec_proc) == PUSHED) {  // use exec_proc parameter
+            return PROCESS_BLOCKED;  // this will skip execution and go to next while loop iteration
         } else {
             fprintf(stderr, "ERROR ON: sched_push_to_blocked_queue returned PUSH_ERROR\n");
             return PROCESS_ERROR;
@@ -194,7 +198,7 @@ sched_ressources_return op_check_ressources(ORDONNANCEUR* self, PCB* exec_proc) 
 
 TASK op_sched_update_process_manager(struct ORDONNANCEUR* self, float temps, float* runed) {
 
-    return self->simulator->simul_update_process_manager(self->simulator, NULL, &temps, runed); // NULL because of file buffer we wont use it here
+    return self->simulator->simul_update_process_manager(self->simulator, NULL, &temps, runed); // null because of file buffer we wont use it here
 }
 
 
@@ -218,7 +222,7 @@ TASK op_sched_update_ready_queue(ORDONNANCEUR* self, bool circular) {
 }
 
 
-ORDONNANCEUR* op_sched_init(ORDONNANCEUR* self, SIMULATOR* simulator, OPTIONS* options) {
+INITIALIZATION op_sched_init(ORDONNANCEUR* self, SIMULATOR* simulator, OPTIONS* options) {
 
     // function assigning
     self->create_execution_queue = op_create_execution_queue;
@@ -289,5 +293,5 @@ ORDONNANCEUR* op_sched_init(ORDONNANCEUR* self, SIMULATOR* simulator, OPTIONS* o
     self->execution_segments_head = NULL;
     self->current_segment = NULL;
 
-    return self;
+    return INIT_SUCC;
 }
