@@ -1,6 +1,6 @@
 # CPU Scheduling Simulator
 
-This project is a comprehensive simulator for various CPU scheduling algorithms. It features a core simulation engine written in C and a user-friendly graphical interface built with Python and Tkinter for running simulations and visualizing results.
+This project is a simulator for various CPU scheduling algorithms. It simulate a part of the operating system's kernel using C along with a graphical interface built with python tkinter for running simulations and visualizing results.
 
 ## Features
 
@@ -26,10 +26,10 @@ Follow these instructions to compile and run the simulator on your local machine
 
 ### Prerequisites
 
-- **GCC Compiler:** Required to compile the C simulation engine.
-- **Python 3:** Required to run the GUI.
-- **Tkinter:** The standard Python interface to the Tcl/Tk GUI toolkit. (Usually included with Python).
-- **Matplotlib:** A Python library for creating static, animated, and interactive visualizations.
+- **GCC Compiler:** 
+- **Python 3:** 
+- **Tkinter:** 
+- **Matplotlib:**
 
 You can install Matplotlib using pip:
 ```sh
