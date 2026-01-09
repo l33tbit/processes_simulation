@@ -9,7 +9,7 @@ typedef struct SIMULATOR SIMULATOR;
 
 int global_algorithm = 4;
 float global_quantum = 0.0f;
-char* global_file_path = "/home/zeus/projects/final/processus_simulation/src/unit_testing/data_testing.csv";
+char* global_file_path = "/home/zeus/projects/final/processus_simulation/src/unit_testing/data.csv";
 
 void simulator_work(int algorithm, float quantum, char* file_path) { 
 
