@@ -82,11 +82,13 @@ TASK op_log_execution_start(ORDONNANCEUR* self, int pid, float start_time) {
     return TASK_SUCC;
 }
 
+
 TASK op_log_execution_end(ORDONNANCEUR* self, float end_time, const char* reason) {
     if (self->current_segment == NULL) return TASK_ERR;
     self->current_segment->end_time = end_time;
     strcpy(self->current_segment->reason, reason);
     self->current_segment = NULL;
+
     return TASK_SUCC;
 }
 

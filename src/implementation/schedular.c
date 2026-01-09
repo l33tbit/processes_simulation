@@ -80,7 +80,6 @@ PROCESS_UPDATE op_update_process(ORDONNANCEUR* self,PCB* process, float *temps_f
 TASK op_ask_sort_rt(ORDONNANCEUR* self) {
 
     return self->simulator->ask_sort_rt(self->simulator);
-
 }
 
 TASK op_ask_sort_priority(ORDONNANCEUR* self) {
