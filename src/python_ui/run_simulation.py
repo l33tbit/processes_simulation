@@ -23,7 +23,7 @@ class SchedulerUI:
         self.root.title("CPU Scheduler Simulator")
         self.root.geometry("1400x900")
 
-        self.c_executable = "/home/zeus/projects/final/processus_simulation/src/unit_testing/unit_tester"
+        self.c_executable = "/home/zeus/projects/final/processus_simulation/src/simulate"
 
         # Store chart objects
         self.fig = None
