@@ -23,8 +23,7 @@ The core logic is written in C and must be compiled first.
 
 ```bash
 cd src/unit_testing
-gcc -o unit_tester *.c ../implementation/*.c ../implementation/helpers/*.c -lm
-cd ../..
+gcc -o simulate *.c ../implementation/*.c ../implementation/helpers/*.c -lm
 ```
 
 ### 2. Run the Interface
